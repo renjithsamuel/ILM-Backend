@@ -12,7 +12,7 @@ CREATE TABLE IF NOT EXISTS "checkout_tickets" (
     "checkedOutOn" TIMESTAMP(3),
     "returnedDate" TIMESTAMP(3),
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT NOW(),
-    "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT NOW(),
+    "updatedAt" TIMESTAMP(3),
     FOREIGN KEY ("bookID") REFERENCES "books"("ID") ON DELETE CASCADE,
     FOREIGN KEY ("userID") REFERENCES "users"("userID") ON DELETE CASCADE
 );

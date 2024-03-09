@@ -49,8 +49,8 @@ CREATE TABLE IF NOT EXISTS "books" (
     "rating" REAL NOT NULL DEFAULT 0,
     "reviewCount" NUMERIC NOT NULL DEFAULT 0,
     "approximateDemand" NUMERIC NOT NULL DEFAULT 0,
-    "createdAtUTC"  TIMESTAMP(3) NOT NULL             DEFAULT NOW(),
-    "updatedAtUTC"  TIMESTAMP(3)
+    "createdAt"  TIMESTAMP(3) NOT NULL             DEFAULT NOW(),
+    "updatedAt"  TIMESTAMP(3)
 );
 
 COMMIT;
