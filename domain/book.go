@@ -23,7 +23,7 @@ var (
 )
 
 // CreateBook creates a new book or updates an existing one based on ISBN
-func (l *LibraryService) CreateBook(book *model.Book) error {
+func (l *LibraryService) CreateBook(book *model.CreateBookRequest) error {
 	sqlStatement := `
 		INSERT INTO "books"(
 			"ISBN",
@@ -41,10 +41,9 @@ func (l *LibraryService) CreateBook(book *model.Book) error {
 			"wishlistCount",
 			"rating",
 			"reviewCount",
-			"approximateDemand",
-			"createdAt"
+			"approximateDemand"
 		) VALUES (
-			$1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18
+			$1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16
 		) 
 		ON CONFLICT("ISBN") 
 		DO UPDATE SET
@@ -86,7 +85,6 @@ func (l *LibraryService) CreateBook(book *model.Book) error {
 		book.Rating,
 		book.ReviewCount,
 		book.ApproximateDemand,
-		book.CreatedAt,
 	).Scan(&bookID)
 
 	if err != nil {
@@ -126,7 +124,10 @@ func (l *LibraryService) GetBookByISBN(ISBN string) (*model.Book, error) {
 			"ISBN" = $1;
 	`
 
-	var book model.Book
+	var (
+		book      model.Book
+		updatedAt sql.NullTime
+	)
 	err := l.db.QueryRow(sqlStatement, ISBN).Scan(
 		&book.ID,
 		&book.ISBN,
@@ -146,7 +147,7 @@ func (l *LibraryService) GetBookByISBN(ISBN string) (*model.Book, error) {
 		&book.ReviewCount,
 		&book.ApproximateDemand,
 		&book.CreatedAt,
-		&book.UpdatedAt,
+		&updatedAt,
 	)
 
 	if err != nil {
@@ -158,9 +159,10 @@ func (l *LibraryService) GetBookByISBN(ISBN string) (*model.Book, error) {
 		return nil, ErrFailedGetBookByID
 	}
 
+	book.UpdatedAt = &updatedAt.Time
+
 	return &book, nil
 }
-
 
 // getAllBooks retrieves all books from the database
 func (l *LibraryService) GetAllBooks() ([]model.Book, error) {
@@ -172,7 +174,7 @@ func (l *LibraryService) GetAllBooks() ([]model.Book, error) {
 			"author",
 			"genre",
 			"publishedDate",
-			"description",
+			"desc",
 			"previewLink",
 			"coverImage",
 			"shelfNumber",
@@ -198,7 +200,10 @@ func (l *LibraryService) GetAllBooks() ([]model.Book, error) {
 
 	var books []model.Book
 	for rows.Next() {
-		var book model.Book
+		var (
+			book      model.Book
+			updatedAt sql.NullTime
+		)
 		err := rows.Scan(
 			&book.ID,
 			&book.ISBN,
@@ -218,12 +223,13 @@ func (l *LibraryService) GetAllBooks() ([]model.Book, error) {
 			&book.ReviewCount,
 			&book.ApproximateDemand,
 			&book.CreatedAt,
-			&book.UpdatedAt,
+			&updatedAt,
 		)
 		if err != nil {
 			log.Error().Msgf("[Error] GetAllBooks(), rows.Scan err: %v", err)
 			return nil, err
 		}
+		book.UpdatedAt = &updatedAt.Time
 		books = append(books, book)
 	}
 

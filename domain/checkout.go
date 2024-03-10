@@ -26,10 +26,9 @@ var (
 )
 
 // CreateCheckoutTicket creates a new checkout ticket
-func (l *LibraryService) CreateCheckoutTicket(ticket *model.CheckoutTicket) error {
+func (l *LibraryService) CreateCheckoutTicket(ticket *model.CreateCheckoutRequest) error {
 	sqlStatement := `
 		INSERT INTO "checkout_tickets"(
-			"ID",
 			"bookID",
 			"userID",
 			"isCheckedOut",
@@ -38,16 +37,24 @@ func (l *LibraryService) CreateCheckoutTicket(ticket *model.CheckoutTicket) erro
 			"fineAmount",
 			"reservedOn",
 			"checkedOutOn",
-			"returnedDate",
-			"createdAt"
+			"returnedDate"
 		) VALUES (
-			$1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11
-		) RETURNING "ID";
+			$1, $2, $3, $4, $5, $6, $7, $8, $9
+		) ON CONFLICT ("bookID" , "userID") 
+			DO UPDATE SET
+				"bookID" = EXCLUDED."bookID",
+				"userID" = EXCLUDED."userID",
+				"isCheckedOut" = EXCLUDED."isCheckedOut",
+				"isReturned" = EXCLUDED."isReturned",
+				"numberOfDays" = EXCLUDED."numberOfDays",
+				"fineAmount" = EXCLUDED."fineAmount",
+				"reservedOn" = EXCLUDED."reservedOn",
+				"checkedOutOn" = EXCLUDED."checkedOutOn",
+				"returnedDate" = EXCLUDED."returnedDate";
 	`
 
-	err := l.db.QueryRow(
+	res := l.db.QueryRow(
 		sqlStatement,
-		ticket.ID,
 		ticket.BookID,
 		ticket.UserID,
 		ticket.IsCheckedOut,
@@ -57,10 +64,9 @@ func (l *LibraryService) CreateCheckoutTicket(ticket *model.CheckoutTicket) erro
 		ticket.ReservedOn,
 		ticket.CheckedOutOn,
 		ticket.ReturnedDate,
-		ticket.CreatedAt,
-	).Scan(&ticket.ID)
+	)
 
-	if err != nil {
+	if err := res.Err(); err != nil {
 		log.Error().Msgf("[Error] CreateCheckoutTicket(), db.QueryRow err: %v", err)
 		return ErrFailedCreateCheckoutTicket
 	}
@@ -90,7 +96,10 @@ func (l *LibraryService) GetCheckoutTicketByID(ticketID string) (*model.Checkout
 			"ID" = $1;
 	`
 
-	var ticket model.CheckoutTicket
+	var (
+		ticket    model.CheckoutTicket
+		updatedAt sql.NullTime
+	)
 	err := l.db.QueryRow(sqlStatement, ticketID).Scan(
 		&ticket.ID,
 		&ticket.BookID,
@@ -103,7 +112,7 @@ func (l *LibraryService) GetCheckoutTicketByID(ticketID string) (*model.Checkout
 		&ticket.CheckedOutOn,
 		&ticket.ReturnedDate,
 		&ticket.CreatedAt,
-		&ticket.UpdatedAt,
+		&updatedAt,
 	)
 
 	if err != nil {
@@ -115,6 +124,7 @@ func (l *LibraryService) GetCheckoutTicketByID(ticketID string) (*model.Checkout
 		log.Error().Msgf("[Error] GetCheckoutTicketByID(), db.QueryRow err: %v", err)
 		return nil, ErrGetCheckoutTicketByIDFailed
 	}
+	ticket.UpdatedAt = updatedAt.Time
 
 	return &ticket, nil
 }
@@ -148,7 +158,10 @@ func (l *LibraryService) GetAllCheckoutTickets() ([]model.CheckoutTicket, error)
 
 	var tickets []model.CheckoutTicket
 	for rows.Next() {
-		var ticket model.CheckoutTicket
+		var (
+			ticket    model.CheckoutTicket
+			updatedAt sql.NullTime
+		)
 		err := rows.Scan(
 			&ticket.ID,
 			&ticket.BookID,
@@ -161,12 +174,13 @@ func (l *LibraryService) GetAllCheckoutTickets() ([]model.CheckoutTicket, error)
 			&ticket.CheckedOutOn,
 			&ticket.ReturnedDate,
 			&ticket.CreatedAt,
-			&ticket.UpdatedAt,
+			&updatedAt,
 		)
 		if err != nil {
 			log.Error().Msgf("[Error] GetAllCheckoutTickets(), rows.Scan err: %v", err)
 			return nil, ErrGetCheckoutTicketsFailed
 		}
+		ticket.UpdatedAt = updatedAt.Time
 		tickets = append(tickets, ticket)
 	}
 
@@ -174,7 +188,7 @@ func (l *LibraryService) GetAllCheckoutTickets() ([]model.CheckoutTicket, error)
 }
 
 // UpdateCheckoutTicket updates an existing checkout ticket
-func (l *LibraryService) UpdateCheckoutTicket(ticket *model.CheckoutTicket) error {
+func (l *LibraryService) UpdateCheckoutTicket(ticket *model.UpdateCheckoutTicketRequest) error {
 	sqlStatement := `
 		UPDATE "checkout_tickets" SET
 			"bookID" = $2,

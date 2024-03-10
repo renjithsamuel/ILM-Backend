@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"flag"
 	"fmt"
+
 	"github.com/joho/godotenv"
 
 	"log"
@@ -11,11 +12,12 @@ import (
 	"os/signal"
 	"time"
 
-	"github.com/gin-gonic/gin"
 	"integrated-library-service/domain"
 	"integrated-library-service/handlers"
 	"integrated-library-service/middleware"
 	"integrated-library-service/routes"
+
+	"github.com/gin-gonic/gin"
 
 	_ "github.com/lib/pq" // pq driver.
 )

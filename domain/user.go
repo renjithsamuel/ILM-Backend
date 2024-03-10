@@ -103,7 +103,10 @@ func (l *LibraryService) GetUserByEmail(email string) (*model.User, error) {
 			"email" = $1;
 	`
 
-	var user model.User
+	var (
+		user      model.User
+		updatedAt sql.NullTime
+	)
 	err := l.db.QueryRow(sqlStatement, email).Scan(
 		&user.UserID,
 		&user.ProfileImageUrl,
@@ -119,7 +122,7 @@ func (l *LibraryService) GetUserByEmail(email string) (*model.User, error) {
 		&user.FineAmount,
 		&user.IsPaymentDone,
 		&user.CreatedAt,
-		&user.UpdatedAt,
+		&updatedAt,
 	)
 
 	if err != nil {
@@ -131,6 +134,8 @@ func (l *LibraryService) GetUserByEmail(email string) (*model.User, error) {
 		log.Error().Msgf("[Error] GetUserByEmail(), db.QueryRow err: %v", err)
 		return nil, ErrFailedGetUserByEmailFailed
 	}
+
+	user.UpdatedAt = &updatedAt.Time
 
 	return &user, nil
 }
@@ -228,11 +233,7 @@ func (l *LibraryService) GetUserWithBookDetails(userID string) (*model.User, err
 	user.BookDetails.CheckedOutBookList = checkedOutBookList
 	user.BookDetails.CompletedBooksList = completedBooksList
 	user.BookDetails.WishlistBooks = wishlistBooks
-	// Convert pq.StringArray to []model.BookGenreType
-	user.BookDetails.FavoriteGenres = make([]model.BookGenreType, len(favoriteGenres))
-	for i, genreString := range favoriteGenres {
-		user.BookDetails.FavoriteGenres[i] = model.BookGenreType("").StringToBookGenre(genreString)
-	}
+	user.BookDetails.FavoriteGenres = favoriteGenres
 
 	return &user, nil
 }
@@ -269,7 +270,10 @@ func (l *LibraryService) GetAllUsers() ([]model.User, error) {
 
 	var users []model.User
 	for rows.Next() {
-		var user model.User
+		var (
+			user      model.User
+			updatedAt sql.NullTime
+		)
 		err := rows.Scan(
 			&user.UserID,
 			&user.ProfileImageUrl,
@@ -285,18 +289,18 @@ func (l *LibraryService) GetAllUsers() ([]model.User, error) {
 			&user.FineAmount,
 			&user.IsPaymentDone,
 			&user.CreatedAt,
-			&user.UpdatedAt,
+			&updatedAt,
 		)
 		if err != nil {
 			log.Error().Msgf("[Error] GetAllUsers(), rows.Scan err: %v", err)
 			return nil, err
 		}
+		user.UpdatedAt = &updatedAt.Time
 		users = append(users, user)
 	}
 
 	return users, nil
 }
-
 
 // UpdateUser updates an existing user in the "users" table
 func (l *LibraryService) UpdateUser(user *model.User, userID string) error {

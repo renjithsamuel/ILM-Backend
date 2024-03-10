@@ -21,6 +21,18 @@ type Service interface {
 	CreateBook(book *model.CreateBookRequest) error
 	GetBookByISBN(ISBN string) (*model.Book, error)
 	GetAllBooks() ([]model.Book, error)
+	// checkout related
+	CreateCheckoutTicket(ticket *model.CreateCheckoutRequest) error
+	GetCheckoutTicketByID(ticketID string) (*model.CheckoutTicket, error)
+	GetAllCheckoutTickets() ([]model.CheckoutTicket, error)
+	UpdateCheckoutTicket(ticket *model.UpdateCheckoutTicketRequest) error
+	DeleteCheckoutTicket(ticketID string) error
+	// review related
+	CreateReview(review *model.CreateReviewRequest) error
+	GetReviewByID(reviewID string) (*model.Review, error)
+	UpdateReview(updateReq *model.UpdateReviewRequest) error
+	DeleteReview(reviewID string) error
+	GetReviewsByBookID(bookID string) ([]model.Review, error)
 }
 
 // LibraryService is a concrete service which implements Service

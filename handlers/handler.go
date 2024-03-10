@@ -32,7 +32,17 @@ type Handler interface {
 	GetBookByISBNHandler(c *gin.Context)
 	GetAllBooksHandler(c *gin.Context)
 	// checkout related
-	
+	CreateCheckoutHandler(c *gin.Context)
+	GetCheckoutTicketByIDHandler(c *gin.Context)
+	GetAllCheckoutTicketsHandler(c *gin.Context)
+	UpdateCheckoutTicketHandler(c *gin.Context)
+	DeleteCheckoutTicketHandler(c *gin.Context)
+	// review related
+	CreateReviewHandler(c *gin.Context)
+	GetReviewByIDHandler(c *gin.Context)
+	GetReviewsByBookIDHandler(c *gin.Context)
+	UpdateReviewHandler(c *gin.Context)
+	DeleteReviewHandler(c *gin.Context)
 }
 
 type LibraryHandler struct {

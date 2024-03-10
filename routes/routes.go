@@ -85,7 +85,7 @@ func NewRoutes(libraryHandler *handlers.LibraryHandler) Routes {
 		// book related
 		Route{
 			Name:           "Create Book", // will be added when added to library
-			Method:         http.MethodGet,
+			Method:         http.MethodPost,
 			Pattern:        "/books",
 			ProtectedRoute: true,
 			HandlerFunc:    libraryHandler.CreateBookHandler,
@@ -105,6 +105,77 @@ func NewRoutes(libraryHandler *handlers.LibraryHandler) Routes {
 			HandlerFunc:    libraryHandler.GetAllBooksHandler,
 		},
 		// checkout related
+		Route{
+			Name:           "Create Checkout Ticket",
+			Method:         http.MethodPost,
+			Pattern:        "/checkouts",
+			ProtectedRoute: true,
+			HandlerFunc:    libraryHandler.CreateCheckoutHandler,
+		},
+		Route{
+			Name:           "Get Checkout Ticket By ID",
+			Method:         http.MethodGet,
+			Pattern:        "/checkouts/:checkoutid",
+			ProtectedRoute: true,
+			HandlerFunc:    libraryHandler.GetCheckoutTicketByIDHandler,
+		},
+		Route{
+			Name:           "Get All Checkout Tickets Sorted",
+			Method:         http.MethodGet,
+			Pattern:        "/allcheckouts",
+			ProtectedRoute: true,
+			HandlerFunc:    libraryHandler.GetAllCheckoutTicketsHandler,
+		},
+		Route{
+			Name:           "Update Checkout Ticket",
+			Method:         http.MethodPut,
+			Pattern:        "/checkouts",
+			ProtectedRoute: true,
+			HandlerFunc:    libraryHandler.UpdateCheckoutTicketHandler,
+		},
+		Route{
+			Name:           "Delete Checkout Ticket",
+			Method:         http.MethodDelete,
+			Pattern:        "/checkouts",
+			ProtectedRoute: true,
+			HandlerFunc:    libraryHandler.DeleteCheckoutTicketHandler,
+		},
+		// review related
+		Route{
+			Name:           "Create Review",
+			Method:         http.MethodPost,
+			Pattern:        "/reviews",
+			ProtectedRoute: true,
+			HandlerFunc:    libraryHandler.CreateReviewHandler,
+		},
+		Route{
+			Name:           "Get Review by ID",
+			Method:         http.MethodGet,
+			Pattern:        "/reviews/:reviewid",
+			ProtectedRoute: true,
+			HandlerFunc:    libraryHandler.GetReviewByIDHandler,
+		},
+		Route{
+			Name:           "Get Reviews by bookID",
+			Method:         http.MethodGet,
+			Pattern:        "/allreviews/:bookid",
+			ProtectedRoute: true,
+			HandlerFunc:    libraryHandler.GetReviewsByBookIDHandler,
+		},
+		Route{
+			Name:           "Update Review",
+			Method:         http.MethodPut,
+			Pattern:        "/reviews",
+			ProtectedRoute: true,
+			HandlerFunc:    libraryHandler.UpdateReviewHandler,
+		},
+		Route{
+			Name:           "Delete Review",
+			Method:         http.MethodDelete,
+			Pattern:        "/reviews/:reviewid",
+			ProtectedRoute: true,
+			HandlerFunc:    libraryHandler.DeleteReviewHandler,
+		},
 	}
 }
 

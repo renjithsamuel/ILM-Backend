@@ -5,25 +5,44 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v4"
 )
 
+const (
+	userIDContextKey = "userID"
+	bearerPrefix     = "Bearer "
+)
+
 func (m *UserMiddleware) DoAuthenticate(c *gin.Context) {
-	token := c.GetHeader("Authorization")
-	if token == "" {
+	authorizationHeader := c.GetHeader("Authorization")
+	if authorizationHeader == "" {
+		c.Header("WWW-Authenticate", "Bearer")
 		c.JSON(http.StatusUnauthorized, gin.H{
-			"message": "Unauthorized",
+			"message": "Unauthorized. Bearer token required.",
 		})
 		c.Abort()
 		return
 	}
 
+	// Check for Bearer prefix
+	if !strings.HasPrefix(authorizationHeader, bearerPrefix) {
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"message": "Unauthorized: token string should start with 'Bearer '",
+		})
+		c.Abort()
+		return
+	}
+
+	// Extract token without the Bearer prefix
+	token := strings.TrimPrefix(authorizationHeader, bearerPrefix)
+
 	// Validate token using validateToken
 	userID, err := m.validateToken(token)
 	if err != nil {
-		log.Printf("[Validation Failed] : %v\n", err)
+		log.Printf("[Validation Failed] %v\n", err)
 		c.JSON(http.StatusUnauthorized, gin.H{
 			"message": "Unauthorized: " + err.Error(),
 		})
@@ -40,7 +59,7 @@ func (m *UserMiddleware) DoAuthenticate(c *gin.Context) {
 		return
 	}
 
-	c.Set("userID", userID)
+	c.Set(userIDContextKey, userID)
 	c.Next()
 }
 

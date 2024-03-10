@@ -21,6 +21,22 @@ var (
 		"role.required":            errors.New("is required"),
 		"role.oneof":               errors.New("should be one of librarian or patrons"),
 		// book related errors
+		"ISBN.required":          errors.New("is required"),
+		"title.required":         errors.New("is required"),
+		"author.required":        errors.New("is required"),
+		"publishedDate.required": errors.New("is required"),
+		"coverImage.required":    errors.New("is required"),
+		"shelfNumber.required":   errors.New("is required"),
+		"inLibrary.required":     errors.New("is required"),
+		"views.required":         errors.New("is required"),
+		"booksLeft.required":     errors.New("is required"),
+		"wishlistCount.required": errors.New("is required"),
+		"rating.required":        errors.New("is required"),
+		"reviewCount.required":   errors.New("is required"),
+		// checkout related errors
+		"ID.required":     errors.New("is required"),
+		"bookID.required": errors.New("is required"),
+		// review related errors
 	}
 )
 
