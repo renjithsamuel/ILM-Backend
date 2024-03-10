@@ -29,3 +29,7 @@ type Book struct {
 type CreateBookRequest struct {
 	Book
 }
+
+type GetBookByISBNRequest struct {
+	ISBN string `json:"isbn" uri:"isbn" binding:"required"`
+}

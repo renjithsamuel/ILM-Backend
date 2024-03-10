@@ -19,12 +19,20 @@ func init() {
 // Handler is an interface for library operations.
 type Handler interface {
 	HealthHandler(c *gin.Context)
+	// user related
 	RegisterUserHandler(c *gin.Context)
 	LoginUserHandler(c *gin.Context)
 	GetUserHandler(c *gin.Context)
+	GetAllUsersHandler(c *gin.Context)
 	UpdateUserHandler(c *gin.Context)
 	UpdateBookDetailsHandler(c *gin.Context)
 	DeleteUserHandler(c *gin.Context)
+	// book related
+	CreateBookHandler(c *gin.Context)
+	GetBookByISBNHandler(c *gin.Context)
+	GetAllBooksHandler(c *gin.Context)
+	// checkout related
+	
 }
 
 type LibraryHandler struct {

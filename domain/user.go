@@ -237,6 +237,67 @@ func (l *LibraryService) GetUserWithBookDetails(userID string) (*model.User, err
 	return &user, nil
 }
 
+// GetAllUsers retrieves all users from the database
+func (l *LibraryService) GetAllUsers() ([]model.User, error) {
+	sqlStatement := `
+		SELECT 
+			"userID",
+			"profileImageUrl",
+			"name",
+			"email",
+			"role",
+			"dateOfBirth",
+			"phoneNumber",
+			"address",
+			"joinedDate",
+			"country",
+			"views",
+			"fineAmount",
+			"isPaymentDone",
+			"createdAt",
+			"updatedAt"
+		FROM 
+			"users";
+	`
+
+	rows, err := l.db.Query(sqlStatement)
+	if err != nil {
+		log.Error().Msgf("[Error] GetAllUsers(), db.Query err: %v", err)
+		return nil, err
+	}
+	defer rows.Close()
+
+	var users []model.User
+	for rows.Next() {
+		var user model.User
+		err := rows.Scan(
+			&user.UserID,
+			&user.ProfileImageUrl,
+			&user.Name,
+			&user.Email,
+			&user.Role,
+			&user.DateOfBirth,
+			&user.PhoneNumber,
+			&user.Address,
+			&user.JoinedDate,
+			&user.Country,
+			&user.Views,
+			&user.FineAmount,
+			&user.IsPaymentDone,
+			&user.CreatedAt,
+			&user.UpdatedAt,
+		)
+		if err != nil {
+			log.Error().Msgf("[Error] GetAllUsers(), rows.Scan err: %v", err)
+			return nil, err
+		}
+		users = append(users, user)
+	}
+
+	return users, nil
+}
+
+
 // UpdateUser updates an existing user in the "users" table
 func (l *LibraryService) UpdateUser(user *model.User, userID string) error {
 	sqlStatement := `

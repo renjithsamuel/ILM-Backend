@@ -9,12 +9,18 @@ import (
 // Service is an interface for its concrete class to implement.
 type Service interface {
 	DBStatus() (bool, error)
+	// user related
 	CreateUser(user *model.RegisterUserRequest) error
 	GetUserByEmail(email string) (*model.User, error)
 	GetUserWithBookDetails(userID string) (*model.User, error)
+	GetAllUsers() ([]model.User, error)
 	UpdateUser(user *model.User, userID string) error
 	UpdateBookDetails(bookDetails *model.BookDetails, userID string) error
 	DeleteUser(userID string) error
+	// book related
+	CreateBook(book *model.CreateBookRequest) error
+	GetBookByISBN(ISBN string) (*model.Book, error)
+	GetAllBooks() ([]model.Book, error)
 }
 
 // LibraryService is a concrete service which implements Service

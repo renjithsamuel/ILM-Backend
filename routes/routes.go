@@ -55,6 +55,13 @@ func NewRoutes(libraryHandler *handlers.LibraryHandler) Routes {
 			HandlerFunc:    libraryHandler.GetUserHandler,
 		},
 		Route{
+			Name:           "Get All Users With Sorted",
+			Method:         http.MethodGet,
+			Pattern:        "/allusers",
+			ProtectedRoute: true,
+			HandlerFunc:    libraryHandler.GetAllUsersHandler,
+		},
+		Route{
 			Name:           "Update User",
 			Method:         http.MethodPut,
 			Pattern:        "/users",
@@ -75,8 +82,29 @@ func NewRoutes(libraryHandler *handlers.LibraryHandler) Routes {
 			ProtectedRoute: true,
 			HandlerFunc:    libraryHandler.DeleteUserHandler,
 		},
-		// update user data - PUT
-		// update book details data - PUT
+		// book related
+		Route{
+			Name:           "Create Book", // will be added when added to library
+			Method:         http.MethodGet,
+			Pattern:        "/books",
+			ProtectedRoute: true,
+			HandlerFunc:    libraryHandler.CreateBookHandler,
+		},
+		Route{
+			Name:           "Get Book By ISBN",
+			Method:         http.MethodGet,
+			Pattern:        "/books/:isbn",
+			ProtectedRoute: true,
+			HandlerFunc:    libraryHandler.GetBookByISBNHandler,
+		},
+		Route{
+			Name:           "Get All Books Sorted",
+			Method:         http.MethodGet,
+			Pattern:        "/allbooks",
+			ProtectedRoute: true,
+			HandlerFunc:    libraryHandler.GetAllBooksHandler,
+		},
+		// checkout related
 	}
 }
 
