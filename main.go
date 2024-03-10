@@ -120,9 +120,10 @@ func main() {
 	go handleInterrupts()
 
 	server := gin.Default()
-	ilmGroup := server.Group("ilm-service/v1")
 	// initializing cors
 	server.Use(middleware.CORS())
+	// server.SetTrustedProxies([]string{"127.0.0.1", "127.0.0.1:3000"})
+	ilmGroup := server.Group("ilm-service/v1")
 	authMiddleware := middleware.NewAuthMiddleware(secretKey)
 
 	db, err := openDB()

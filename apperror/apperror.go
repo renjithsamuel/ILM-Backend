@@ -13,13 +13,15 @@ import (
 var (
 	customErrors = map[string]error{
 		// user related errors
-		"userID.required":          errors.New("is required"),
-		"userID.uuid":              errors.New("should be uuid"),
-		"email.required":           errors.New("is required"),
-		"email.email":              errors.New("should be email"),
-		"profileImageUrl.required": errors.New("is required"),
-		"role.required":            errors.New("is required"),
-		"role.oneof":               errors.New("should be one of librarian or patrons"),
+		"userID.required":           errors.New("is required"),
+		"userID.uuid":               errors.New("should be uuid"),
+		"email.required":            errors.New("is required"),
+		"email.email":               errors.New("should be email"),
+		"profileImageUrl.required":  errors.New("is required"),
+		"role.required":             errors.New("is required"),
+		"role.oneof":                errors.New("should be one of librarian or patrons"),
+		"password.required":         errors.New("is required"),
+		"password.validatepassword": errors.New("password should contain uppercase and lowercase letter and no special character"),
 		// book related errors
 		"ISBN.required":          errors.New("is required"),
 		"title.required":         errors.New("is required"),

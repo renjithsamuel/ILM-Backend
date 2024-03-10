@@ -38,8 +38,9 @@ func (l *LibraryService) CreateUser(user *model.RegisterUserRequest) error {
 									"profileImageUrl",
 									"name",
 									"email",
-									"role"
-								) VALUES ($1, $2, $3, $4)
+									"role",
+									"password"
+								) VALUES ($1, $2, $3, $4, $5)
 					ON CONFLICT ("email") 
 						DO UPDATE SET 
 								"profileImageUrl" = EXCLUDED."profileImageUrl",
@@ -48,7 +49,7 @@ func (l *LibraryService) CreateUser(user *model.RegisterUserRequest) error {
 					RETURNING "userID";
 					`
 	var userID string
-	if err := l.db.QueryRow(sqlStatement, user.ProfileImageUrl, user.Name, user.Email, user.Role).Scan(&userID); err != nil {
+	if err := l.db.QueryRow(sqlStatement, user.ProfileImageUrl, user.Name, user.Email, user.Role, user.Password).Scan(&userID); err != nil {
 		log.Error().Msgf("[Error] CreateUser(), db.Exec err: %v", err)
 		return ErrFailedCreateUser
 	}
@@ -96,7 +97,8 @@ func (l *LibraryService) GetUserByEmail(email string) (*model.User, error) {
 			"fineAmount",
 			"isPaymentDone",
 			"createdAt",
-			"updatedAt"   
+			"updatedAt",
+			"password"
 		FROM 
 			"users"
 		WHERE 
@@ -123,6 +125,7 @@ func (l *LibraryService) GetUserByEmail(email string) (*model.User, error) {
 		&user.IsPaymentDone,
 		&user.CreatedAt,
 		&updatedAt,
+		&user.Password,
 	)
 
 	if err != nil {

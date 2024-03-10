@@ -7,6 +7,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt"
+	"golang.org/x/crypto/bcrypt"
 
 	"integrated-library-service/apperror"
 	"integrated-library-service/domain"
@@ -36,6 +37,14 @@ func (th *LibraryHandler) LoginUserHandler(c *gin.Context) {
 
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"message": err.Error(),
+		})
+		return
+	}
+
+	// Compare the stored hashed password with the login password
+	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(req.Password)); err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"message": "password doesn't match",
 		})
 		return
 	}

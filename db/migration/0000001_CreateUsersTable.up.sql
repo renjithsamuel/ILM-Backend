@@ -17,7 +17,7 @@ CREATE TABLE IF NOT EXISTS "users" (
     "country" VARCHAR(50),
     "views" NUMERIC,
     "fineAmount" REAL NOT NULL DEFAULT 0,
-    -- "password" VARCHAR(50) NOT NULL,
+    "password" VARCHAR NOT NULL,
     "isPaymentDone" BOOLEAN NOT NULL DEFAULT false,
     "createdAt"  TIMESTAMP(3) NOT NULL             DEFAULT NOW(),
     "updatedAt"  TIMESTAMP(3)

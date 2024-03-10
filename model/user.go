@@ -36,8 +36,10 @@ type RegisterUserRequest struct {
 	ProfileImageUrl string   `json:"profileImageUrl" binding:"required"`
 	Name            string   `json:"name" binding:"required"`
 	Role            RoleType `json:"role" binding:"required,oneof=librarian patrons"`
+	Password        string   `json:"password" binding:"required,min=8,max=20,validatepassword"`
 }
 
 type LoginUserRequest struct {
-	Email string `json:"email" binding:"required,email"`
+	Email    string `json:"email" binding:"required,email"`
+	Password string `json:"password" binding:"required,min=8,max=20,validatepassword"`
 }

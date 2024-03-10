@@ -1,9 +1,11 @@
 package handlers
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"golang.org/x/crypto/bcrypt"
 
 	"integrated-library-service/apperror"
 	"integrated-library-service/model"
@@ -18,6 +20,18 @@ func (th *LibraryHandler) RegisterUserHandler(c *gin.Context) {
 		})
 		return
 	}
+
+	// encrypting the password of the user before stroign
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"message": "Error while hashing the password",
+		})
+		return
+	}
+	req.Password = string(hashedPassword)
+
+	fmt.Println(req.Password)
 
 	// create user is an upsert operation
 	if err := th.domain.CreateUser(&req); err != nil {
