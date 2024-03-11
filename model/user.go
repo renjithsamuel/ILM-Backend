@@ -33,7 +33,7 @@ type User struct {
 
 type RegisterUserRequest struct {
 	Email           string   `json:"email" binding:"required,email"`
-	ProfileImageUrl string   `json:"profileImageUrl" binding:"required"`
+	ProfileImageUrl string   `json:"profileImageUrl" binding:"omitempty"`
 	Name            string   `json:"name" binding:"required"`
 	Role            RoleType `json:"role" binding:"required,oneof=librarian patrons"`
 	Password        string   `json:"password" binding:"required,min=8,max=20,validatepassword"`
