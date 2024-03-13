@@ -57,6 +57,13 @@ func (th *LibraryHandler) LoginUserHandler(c *gin.Context) {
 		return
 	}
 
+	// // Set cookie
+	// c.SetCookie("access_token", token, int(time.Hour.Seconds()*1000), "/", "http://localhost", false, true)
+
+	// c.JSON(http.StatusOK, gin.H{
+	// 	"message": "Login successful",
+	// })
+	
 	c.JSON(http.StatusOK, gin.H{
 		"token": token,
 	})

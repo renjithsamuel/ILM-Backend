@@ -244,24 +244,37 @@ func (l *LibraryService) GetUserWithBookDetails(userID string) (*model.User, err
 // GetAllUsers retrieves all users from the database
 func (l *LibraryService) GetAllUsers() ([]model.User, error) {
 	sqlStatement := `
-		SELECT 
-			"userID",
-			"profileImageUrl",
-			"name",
-			"email",
-			"role",
-			"dateOfBirth",
-			"phoneNumber",
-			"address",
-			"joinedDate",
-			"country",
-			"views",
-			"fineAmount",
-			"isPaymentDone",
-			"createdAt",
-			"updatedAt"
+			SELECT 
+			u."userID",
+			u."profileImageUrl",
+			u."name",
+			u."email",
+			u."role",
+			u."dateOfBirth",
+			u."phoneNumber",
+			u."address",
+			u."joinedDate",
+			u."country",
+			u."views",
+			u."fineAmount",
+			u."isPaymentDone",
+			u."createdAt",
+			u."updatedAt",
+			bkd."reservedBooksCount",
+			bkd."reservedBookList",
+			bkd."pendingBooksCount",
+			bkd."pendingBooksList",
+			bkd."checkedOutBooksCount",
+			bkd."checkedOutBookList",
+			bkd."completedBooksCount",
+			bkd."completedBooksList",
+			bkd."favoriteGenres",
+			bkd."wishlistBooks",
+			bkd."createdAt" as "bookDetails.createdAt",
+			bkd."updatedAt" as "bookDetails.updatedAt"
 		FROM 
-			"users";
+			"users" as u INNER JOIN "book_details" as bkd 
+				ON u."userID" = bkd."userID"
 	`
 
 	rows, err := l.db.Query(sqlStatement)
@@ -274,8 +287,13 @@ func (l *LibraryService) GetAllUsers() ([]model.User, error) {
 	var users []model.User
 	for rows.Next() {
 		var (
-			user      model.User
-			updatedAt sql.NullTime
+			user               model.User
+			reservedBooksList  pq.StringArray
+			pendingBooksList   pq.StringArray
+			checkedOutBookList pq.StringArray
+			completedBooksList pq.StringArray
+			favoriteGenres     pq.StringArray
+			wishlistBooks      pq.StringArray
 		)
 		err := rows.Scan(
 			&user.UserID,
@@ -292,13 +310,31 @@ func (l *LibraryService) GetAllUsers() ([]model.User, error) {
 			&user.FineAmount,
 			&user.IsPaymentDone,
 			&user.CreatedAt,
-			&updatedAt,
+			&user.UpdatedAt,
+			&user.BookDetails.ReservedBooksCount,
+			&reservedBooksList,
+			&user.BookDetails.PendingBooksCount,
+			&pendingBooksList,
+			&user.BookDetails.CheckedOutBooksCount,
+			&checkedOutBookList,
+			&user.BookDetails.CompletedBooksCount,
+			&completedBooksList,
+			&favoriteGenres,
+			&wishlistBooks,
+			&user.BookDetails.CreatedAt,
+			&user.BookDetails.UpdatedAt,
 		)
 		if err != nil {
 			log.Error().Msgf("[Error] GetAllUsers(), rows.Scan err: %v", err)
 			return nil, err
 		}
-		user.UpdatedAt = &updatedAt.Time
+		user.BookDetails.ReservedBookList = reservedBooksList
+		user.BookDetails.PendingBooksList = pendingBooksList
+		user.BookDetails.CheckedOutBookList = checkedOutBookList
+		user.BookDetails.CompletedBooksList = completedBooksList
+		user.BookDetails.WishlistBooks = wishlistBooks
+		user.BookDetails.FavoriteGenres = favoriteGenres
+		
 		users = append(users, user)
 	}
 

@@ -11,7 +11,7 @@ func (th *LibraryHandler) GetAllCheckoutTicketsHandler(c *gin.Context) {
 	// get sorting data
 
 	// Retrieve all checkout tickets using the domain function
-	checkoutTickets, err := th.domain.GetAllCheckoutTickets()
+	checkoutTickets, err := th.domain.GetAllCheckoutTicketsWithDetails()
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"message": err.Error(),

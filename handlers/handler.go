@@ -23,12 +23,14 @@ type Handler interface {
 	RegisterUserHandler(c *gin.Context)
 	LoginUserHandler(c *gin.Context)
 	GetUserHandler(c *gin.Context)
+	GetUserByIDHandler(c *gin.Context)
 	GetAllUsersHandler(c *gin.Context)
 	UpdateUserHandler(c *gin.Context)
 	UpdateBookDetailsHandler(c *gin.Context)
 	DeleteUserHandler(c *gin.Context)
 	// book related
 	CreateBookHandler(c *gin.Context)
+	CreateBooksBatchHandler(c *gin.Context)
 	GetBookByISBNHandler(c *gin.Context)
 	GetAllBooksHandler(c *gin.Context)
 	// checkout related

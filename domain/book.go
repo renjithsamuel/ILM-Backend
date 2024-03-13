@@ -6,6 +6,7 @@ import (
 	"integrated-library-service/model"
 	"time"
 
+	"github.com/lib/pq"
 	"github.com/rs/zerolog/log"
 )
 
@@ -14,10 +15,14 @@ var (
 	ErrFailedCreateBook = errors.New("create book failed")
 	// ErrFailedGetBookByID is an error when get book failed
 	ErrFailedGetBookByID = errors.New("get book failed")
+	// ErrGetAllBooksByBookDetailsFromFailed is error when getting books by book details from
+	ErrGetAllBooksByBookDetailsFromFailed = errors.New("get books from book details failed")
 	// ErrGetBookByIDNotFound is an error when get not found
 	ErrGetBookByIDNotFound = errors.New("get book not found")
 	// ErrFailedUpdateBook is an error when update book failed
 	ErrFailedUpdateBook = errors.New("update book failed")
+	// ErrUpdateBookNotFound is an error when update book not found
+	ErrUpdateBookNotFound = errors.New("update book not found")
 	// ErrFailedDeleteBook is an error when delete book failed
 	ErrFailedDeleteBook = errors.New("delete book failed")
 )
@@ -95,6 +100,111 @@ func (l *LibraryService) CreateBook(book *model.CreateBookRequest) error {
 	return nil
 }
 
+// CreateBooksBatch creates multiple books at once
+func (l *LibraryService) CreateBooksBatch(books []*model.CreateBookRequest) error {
+	if len(books) == 0 {
+		return nil // No books to insert
+	}
+
+	tx, err := l.db.Begin()
+	if err != nil {
+		log.Error().Msgf("[Error] CreateBooksBatch(), db.Begin err: %v", err)
+		return ErrFailedCreateBook
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			tx.Rollback()
+		}
+	}()
+
+	sqlStatement := `
+		INSERT INTO "books"(
+			"ISBN",
+			"title",
+			"author",
+			"genre",
+			"publishedDate",
+			"desc",
+			"previewLink",
+			"coverImage",
+			"shelfNumber",
+			"inLibrary",
+			"views",
+			"booksLeft",
+			"wishlistCount",
+			"rating",
+			"reviewCount",
+			"approximateDemand"
+		) VALUES (
+			$1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16
+		) 
+		ON CONFLICT("ISBN") 
+		DO UPDATE SET
+			"title" = EXCLUDED."title",
+			"author" = EXCLUDED."author",
+			"genre" = EXCLUDED."genre",
+			"publishedDate" = EXCLUDED."publishedDate",
+			"desc" = EXCLUDED."desc",
+			"previewLink" = EXCLUDED."previewLink",
+			"coverImage" = EXCLUDED."coverImage",
+			"shelfNumber" = EXCLUDED."shelfNumber",
+			"inLibrary" = EXCLUDED."inLibrary",
+			"views" = EXCLUDED."views",
+			"booksLeft" = EXCLUDED."booksLeft",
+			"wishlistCount" = EXCLUDED."wishlistCount",
+			"rating" = EXCLUDED."rating",
+			"reviewCount" = EXCLUDED."reviewCount",
+			"approximateDemand" = EXCLUDED."approximateDemand",
+			"updatedAt" = NOW()
+		RETURNING "ID";
+	`
+
+	stmt, err := tx.Prepare(sqlStatement)
+	if err != nil {
+		log.Error().Msgf("[Error] CreateBooksBatch(), tx.Prepare err: %v", err)
+		tx.Rollback()
+		return ErrFailedCreateBook
+	}
+	defer stmt.Close()
+
+	for _, book := range books {
+		var bookID string
+		err := stmt.QueryRow(
+			book.ISBN,
+			book.Title,
+			book.Author,
+			book.Genre,
+			book.PublishedDate,
+			book.Description,
+			book.PreviewLink,
+			book.CoverImage,
+			book.ShelfNumber,
+			book.InLibrary,
+			book.Views,
+			book.BooksLeft,
+			book.WishlistCount,
+			book.Rating,
+			book.ReviewCount,
+			book.ApproximateDemand,
+		).Scan(&bookID)
+
+		if err != nil {
+			log.Error().Msgf("[Error] CreateBooksBatch(), stmt.QueryRow err: %v", err)
+			tx.Rollback()
+			return ErrFailedCreateBook
+		}
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		log.Error().Msgf("[Error] CreateBooksBatch(), tx.Commit err: %v", err)
+		tx.Rollback()
+		return ErrFailedCreateBook
+	}
+
+	return nil
+}
+
 // GetBookByID retrieves a book by its ID
 func (l *LibraryService) GetBookByISBN(ISBN string) (*model.Book, error) {
 	sqlStatement := `
@@ -156,6 +266,75 @@ func (l *LibraryService) GetBookByISBN(ISBN string) (*model.Book, error) {
 			return nil, ErrGetBookByIDNotFound
 		}
 		log.Error().Msgf("[Error] GetBookByID(), db.QueryRow err: %v", err)
+		return nil, ErrFailedGetBookByID
+	}
+
+	book.UpdatedAt = &updatedAt.Time
+
+	return &book, nil
+}
+
+// GetBookWithBookID retrieves a book by its ID
+func (l *LibraryService) GetBookWithBookID(bookID string) (*model.Book, error) {
+	sqlStatement := `
+		SELECT
+			"ID",
+			"ISBN",
+			"title",
+			"author",
+			"genre",
+			"publishedDate",
+			"desc",
+			"previewLink",
+			"coverImage",
+			"shelfNumber",
+			"inLibrary",
+			"views",
+			"booksLeft",
+			"wishlistCount",
+			"rating",
+			"reviewCount",
+			"approximateDemand",
+			"createdAt",
+			"updatedAt"
+		FROM
+			"books"
+		WHERE
+			"ID" = $1;
+	`
+
+	var (
+		book      model.Book
+		updatedAt sql.NullTime
+	)
+	err := l.db.QueryRow(sqlStatement, bookID).Scan(
+		&book.ID,
+		&book.ISBN,
+		&book.Title,
+		&book.Author,
+		&book.Genre,
+		&book.PublishedDate,
+		&book.Description,
+		&book.PreviewLink,
+		&book.CoverImage,
+		&book.ShelfNumber,
+		&book.InLibrary,
+		&book.Views,
+		&book.BooksLeft,
+		&book.WishlistCount,
+		&book.Rating,
+		&book.ReviewCount,
+		&book.ApproximateDemand,
+		&book.CreatedAt,
+		&updatedAt,
+	)
+
+	if err != nil {
+		if errors.Is(sql.ErrNoRows, err) {
+			log.Error().Msgf("[Error] GetBookWithBookID(), db.QueryRow err: %v", err)
+			return nil, ErrGetBookByIDNotFound
+		}
+		log.Error().Msgf("[Error] GetBookWithBookID(), db.QueryRow err: %v", err)
 		return nil, ErrFailedGetBookByID
 	}
 
@@ -236,11 +415,122 @@ func (l *LibraryService) GetAllBooks() ([]model.Book, error) {
 	return books, nil
 }
 
+// getAllBooksByBookDetailsFrom retrieves all books from the database which match the condition
+func (l *LibraryService) GetAllBooksByBookDetailsFrom(request *model.GetAllBooksByBookDetailsFromRequest) ([]model.Book, error) {
+	getBookDetailsSqlStatement := `
+			SELECT 
+				"reservedBookList",
+				"pendingBooksList",
+				"checkedOutBookList",
+				"completedBooksList",
+				"wishlistBooks"
+			FROM
+				"book_details"
+			WHERE 
+				"userID" = $1`
+
+	var (
+		reservedBooksList  pq.StringArray
+		pendingBooksList   pq.StringArray
+		checkedOutBookList pq.StringArray
+		completedBooksList pq.StringArray
+		wishlistBooks      pq.StringArray
+		bookList           []string
+	)
+	if err := l.db.QueryRow(getBookDetailsSqlStatement, request.UserID).Scan(&reservedBooksList, &pendingBooksList, &checkedOutBookList, &completedBooksList, &wishlistBooks); err != nil {
+		log.Error().Msgf("[Error] GetAllBooks(), db.Query err: %v", err)
+		return nil, err
+	}
+
+	switch request.BookDetailsFrom {
+	case model.BookDetailsFromReserved:
+		bookList = reservedBooksList
+	case model.BookDetailsFromPending:
+		bookList = pendingBooksList
+	case model.BookDetailsFromCheckedOut:
+		bookList = checkedOutBookList
+	case model.BookDetailsFromWishLists:
+		bookList = wishlistBooks
+	default:
+		bookList = wishlistBooks
+	}
+
+	bookSqlStatement := `
+		SELECT 
+			"ID",
+			"ISBN",
+			"title",
+			"author",
+			"genre",
+			"publishedDate",
+			"desc",
+			"previewLink",
+			"coverImage",
+			"shelfNumber",
+			"inLibrary",
+			"views",
+			"booksLeft",
+			"wishlistCount",
+			"rating",
+			"reviewCount",
+			"approximateDemand",
+			"createdAt",
+			"updatedAt"
+		FROM 
+			"books"
+		WHERE 
+			"ISBN" = ANY($1);
+	`
+
+	rows, err := l.db.Query(bookSqlStatement, pq.Array(bookList))
+	if err != nil {
+		log.Error().Msgf("[Error] GetAllBooks(), db.Query err: %v", err)
+		return nil, err
+	}
+	defer rows.Close()
+
+	var books []model.Book
+	for rows.Next() {
+		var (
+			book      model.Book
+			updatedAt sql.NullTime
+		)
+		err := rows.Scan(
+			&book.ID,
+			&book.ISBN,
+			&book.Title,
+			&book.Author,
+			&book.Genre,
+			&book.PublishedDate,
+			&book.Description,
+			&book.PreviewLink,
+			&book.CoverImage,
+			&book.ShelfNumber,
+			&book.InLibrary,
+			&book.Views,
+			&book.BooksLeft,
+			&book.WishlistCount,
+			&book.Rating,
+			&book.ReviewCount,
+			&book.ApproximateDemand,
+			&book.CreatedAt,
+			&updatedAt,
+		)
+		if err != nil {
+			log.Error().Msgf("[Error] GetAllBooks(), rows.Scan err: %v", err)
+			return nil, err
+		}
+		book.UpdatedAt = &updatedAt.Time
+		books = append(books, book)
+	}
+
+	return books, nil
+}
+
 // UpdateBook updates an existing book in the "books" table
-func (l *LibraryService) UpdateBook(book *model.Book, bookID string) error {
+func (l *LibraryService) UpdateBook(book *model.UpdateBookRequest) error {
 	sqlStatement := `
 		UPDATE "books" SET
-			"ISBN" = $1,
 			"title" = $2,
 			"author" = $3,
 			"genre" = $4,
@@ -258,7 +548,7 @@ func (l *LibraryService) UpdateBook(book *model.Book, bookID string) error {
 			"approximateDemand" = $16,
 			"updatedAt" = $17
 		WHERE
-			"ID" = $18;
+			"ISBN" = $1;
 	`
 
 	updatedAt := time.Now().UTC().Format(time.RFC3339)
@@ -281,7 +571,6 @@ func (l *LibraryService) UpdateBook(book *model.Book, bookID string) error {
 		book.ReviewCount,
 		book.ApproximateDemand,
 		updatedAt,
-		bookID,
 	)
 
 	if err != nil {
@@ -291,7 +580,7 @@ func (l *LibraryService) UpdateBook(book *model.Book, bookID string) error {
 
 	if rowsEffected, err := res.RowsAffected(); err != nil || rowsEffected == 0 {
 		log.Error().Msgf("[error] UpdateBook(), [No rows affected]  : %v", err)
-		return ErrFailedUpdateBook
+		return ErrUpdateBookNotFound
 	}
 
 	return nil

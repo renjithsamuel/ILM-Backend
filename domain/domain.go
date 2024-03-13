@@ -21,10 +21,13 @@ type Service interface {
 	CreateBook(book *model.CreateBookRequest) error
 	GetBookByISBN(ISBN string) (*model.Book, error)
 	GetAllBooks() ([]model.Book, error)
+	GetAllBooksByBookDetailsFrom(request *model.GetAllBooksByBookDetailsFromRequest) ([]model.Book, error)
+	CreateBooksBatch(books []*model.CreateBookRequest) error
+	UpdateBook(book *model.UpdateBookRequest) error
 	// checkout related
 	CreateCheckoutTicket(ticket *model.CreateCheckoutRequest) error
 	GetCheckoutTicketByID(ticketID string) (*model.CheckoutTicket, error)
-	GetAllCheckoutTickets() ([]model.CheckoutTicket, error)
+	GetAllCheckoutTicketsWithDetails() ([]model.CheckoutTicketResponse, error)
 	UpdateCheckoutTicket(ticket *model.UpdateCheckoutTicketRequest) error
 	DeleteCheckoutTicket(ticketID string) error
 	// review related

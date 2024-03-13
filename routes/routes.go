@@ -55,7 +55,14 @@ func NewRoutes(libraryHandler *handlers.LibraryHandler) Routes {
 			HandlerFunc:    libraryHandler.GetUserHandler,
 		},
 		Route{
-			Name:           "Get All Users With Sorted",
+			Name:           "Get User With Book Details For Given ID",
+			Method:         http.MethodGet,
+			Pattern:        "/users/:userid",
+			ProtectedRoute: true,
+			HandlerFunc:    libraryHandler.GetUserByIDHandler,
+		},
+		Route{
+			Name:           "Get All Users With Sorted With Book Details",
 			Method:         http.MethodGet,
 			Pattern:        "/allusers",
 			ProtectedRoute: true,
@@ -84,6 +91,13 @@ func NewRoutes(libraryHandler *handlers.LibraryHandler) Routes {
 		},
 		// book related
 		Route{
+			Name:           "Create Books in Batch", // will be added manually
+			Method:         http.MethodPost,
+			Pattern:        "/allbooks",
+			ProtectedRoute: true,
+			HandlerFunc:    libraryHandler.CreateBooksBatchHandler,
+		},
+		Route{
 			Name:           "Create Book", // will be added when added to library
 			Method:         http.MethodPost,
 			Pattern:        "/books",
@@ -103,6 +117,20 @@ func NewRoutes(libraryHandler *handlers.LibraryHandler) Routes {
 			Pattern:        "/allbooks",
 			ProtectedRoute: true,
 			HandlerFunc:    libraryHandler.GetAllBooksHandler,
+		},
+		Route{
+			Name:           "Update Book by ISBN",
+			Method:         http.MethodPut,
+			Pattern:        "/books",
+			ProtectedRoute: true,
+			HandlerFunc:    libraryHandler.UpdateBookHandler,
+		},
+		Route{
+			Name:           "Get All Books By Book Details From",
+			Method:         http.MethodGet,
+			Pattern:        "/allbooks/:userid/:bookdetailsfrom",
+			ProtectedRoute: true,
+			HandlerFunc:    libraryHandler.GetAllBooksByBookDetailsFromHandler,
 		},
 		// checkout related
 		Route{

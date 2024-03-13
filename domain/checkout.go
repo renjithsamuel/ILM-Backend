@@ -23,47 +23,54 @@ var (
 	ErrFailedUpdateCheckoutTicket = errors.New("update checkout ticket failed")
 	// ErrFailedDeleteCheckoutTicket is an error when delete checkout ticket not found
 	ErrFailedDeleteCheckoutTicket = errors.New("delete checkout ticket failed")
+	// ErrPaymentPending is an error when payment is pending
+	ErrPaymentPending = errors.New("payment is pending")
+	// ErrOutOfStock is an error when book is out of stock
+	ErrOutOfStock = errors.New("book is out of stock")
 )
 
 // CreateCheckoutTicket creates a new checkout ticket
 func (l *LibraryService) CreateCheckoutTicket(ticket *model.CreateCheckoutRequest) error {
+	user, err := l.GetUserWithBookDetails(ticket.UserID)
+	if err != nil {
+		log.Error().Msgf("[Error] CreateCheckoutTicket(), GetUserWithBookDetails err: %v", err)
+		return ErrFailedCreateCheckoutTicket
+	}
+
+	if !user.IsPaymentDone {
+		return ErrPaymentPending
+	}
+
+	book, err := l.GetBookWithBookID(ticket.BookID)
+	if err != nil {
+		log.Error().Msgf("[Error] CreateCheckoutTicket(), GetBookWithBookID err: %v", err)
+		return ErrFailedCreateCheckoutTicket
+	}
+
+	if book.BooksLeft == 0 {
+		return ErrOutOfStock
+	}
+
 	sqlStatement := `
 		INSERT INTO "checkout_tickets"(
 			"bookID",
 			"userID",
-			"isCheckedOut",
-			"isReturned",
 			"numberOfDays",
-			"fineAmount",
-			"reservedOn",
-			"checkedOutOn",
-			"returnedDate"
+			"reservedOn"
 		) VALUES (
-			$1, $2, $3, $4, $5, $6, $7, $8, $9
+			$1, $2, $3, $4
 		) ON CONFLICT ("bookID" , "userID") 
 			DO UPDATE SET
-				"bookID" = EXCLUDED."bookID",
-				"userID" = EXCLUDED."userID",
-				"isCheckedOut" = EXCLUDED."isCheckedOut",
-				"isReturned" = EXCLUDED."isReturned",
-				"numberOfDays" = EXCLUDED."numberOfDays",
-				"fineAmount" = EXCLUDED."fineAmount",
-				"reservedOn" = EXCLUDED."reservedOn",
-				"checkedOutOn" = EXCLUDED."checkedOutOn",
-				"returnedDate" = EXCLUDED."returnedDate";
+				"numberOfDays" = EXCLUDED."numberOfDays";
 	`
 
+	updateAt := time.Now().UTC().Format(time.RFC1123)
 	res := l.db.QueryRow(
 		sqlStatement,
 		ticket.BookID,
 		ticket.UserID,
-		ticket.IsCheckedOut,
-		ticket.IsReturned,
 		ticket.NumberOfDays,
-		ticket.FineAmount,
-		ticket.ReservedOn,
-		ticket.CheckedOutOn,
-		ticket.ReturnedDate,
+		updateAt,
 	)
 
 	if err := res.Err(); err != nil {
@@ -129,39 +136,77 @@ func (l *LibraryService) GetCheckoutTicketByID(ticketID string) (*model.Checkout
 	return &ticket, nil
 }
 
-// GetAllCheckoutTickets retrieves all checkout tickets
-func (l *LibraryService) GetAllCheckoutTickets() ([]model.CheckoutTicket, error) {
+// GetAllCheckoutTicketsWithDetails retrieves all checkout tickets with associated user and book data
+func (l *LibraryService) GetAllCheckoutTicketsWithDetails() ([]model.CheckoutTicketResponse, error) {
 	sqlStatement := `
 		SELECT 
-			"ID",
-			"bookID",
-			"userID",
-			"isCheckedOut",
-			"isReturned",
-			"numberOfDays",
-			"fineAmount",
-			"reservedOn",
-			"checkedOutOn",
-			"returnedDate",
-			"createdAt",
-			"updatedAt"
+			ct."ID",
+			ct."bookID",
+			ct."userID",
+			ct."isCheckedOut",
+			ct."isReturned",
+			ct."numberOfDays",
+			ct."fineAmount",
+			ct."reservedOn",
+			ct."checkedOutOn",
+			ct."returnedDate",
+			ct."createdAt",
+			ct."updatedAt",
+			u."profileImageUrl" as "userProfileImageUrl",
+			u."name" as "userName",
+			u."email" as "userEmail",
+			u."role" as "userRole",
+			u."dateOfBirth" as "userDateOfBirth",
+			u."phoneNumber" as "userPhoneNumber",
+			u."address" as "userAddress",
+			u."joinedDate" as "userJoinedDate",
+			u."country" as "userCountry",
+			u."views" as "userViews",
+			u."fineAmount" as "userFineAmount",
+			b."ID" as "bookID",
+			b."ISBN" as "bookISBN",
+			b."title" as "bookTitle",
+			b."author" as "bookAuthor",
+			b."genre" as "bookGenre",
+			b."publishedDate" as "bookPublishedDate",
+			b."desc" as "bookDescription",
+			b."previewLink" as "bookPreviewLink",
+			b."coverImage" as "bookCoverImage",
+			b."shelfNumber" as "bookShelfNumber",
+			b."inLibrary" as "bookInLibrary",
+			b."views" as "bookViews",
+			b."booksLeft" as "bookBooksLeft",
+			b."wishlistCount" as "bookWishlistCount",
+			b."rating" as "bookRating",
+			b."reviewCount" as "bookReviewCount",
+			b."approximateDemand" as "bookApproximateDemand",
+			b."createdAt" as "bookCreatedAt",
+			b."updatedAt" as "bookUpdatedAt"
 		FROM 
-			"checkout_tickets";
+			"checkout_tickets" ct
+		INNER JOIN
+			"users" u ON ct."userID" = u."userID"
+		INNER JOIN
+			"books" b ON ct."bookID" = b."ID";
 	`
 
 	rows, err := l.db.Query(sqlStatement)
 	if err != nil {
-		log.Error().Msgf("[Error] GetAllCheckoutTickets(), db.Query err: %v", err)
+		log.Error().Msgf("[Error] GetAllCheckoutTicketsWithDetails(), db.Query err: %v", err)
 		return nil, err
 	}
 	defer rows.Close()
 
-	var tickets []model.CheckoutTicket
+	var tickets []model.CheckoutTicketResponse
 	for rows.Next() {
-		var (
-			ticket    model.CheckoutTicket
-			updatedAt sql.NullTime
-		)
+		var ticket model.CheckoutTicketResponse
+		var user model.User
+		var book model.Book
+		var checkedOutOn sql.NullTime
+		var returnedDate sql.NullTime
+		var updatedAt sql.NullTime
+		var reservedOn sql.NullTime
+
 		err := rows.Scan(
 			&ticket.ID,
 			&ticket.BookID,
@@ -170,22 +215,62 @@ func (l *LibraryService) GetAllCheckoutTickets() ([]model.CheckoutTicket, error)
 			&ticket.IsReturned,
 			&ticket.NumberOfDays,
 			&ticket.FineAmount,
-			&ticket.ReservedOn,
-			&ticket.CheckedOutOn,
-			&ticket.ReturnedDate,
+			&reservedOn,
+			&checkedOutOn,
+			&returnedDate,
 			&ticket.CreatedAt,
 			&updatedAt,
+			&user.ProfileImageUrl,
+			&user.Name,
+			&user.Email,
+			&user.Role,
+			&user.DateOfBirth,
+			&user.PhoneNumber,
+			&user.Address,
+			&user.JoinedDate,
+			&user.Country,
+			&user.Views,
+			&user.FineAmount,
+			&book.ID,
+			&book.ISBN,
+			&book.Title,
+			&book.Author,
+			&book.Genre,
+			&book.PublishedDate,
+			&book.Description,
+			&book.PreviewLink,
+			&book.CoverImage,
+			&book.ShelfNumber,
+			&book.InLibrary,
+			&book.Views,
+			&book.BooksLeft,
+			&book.WishlistCount,
+			&book.Rating,
+			&book.ReviewCount,
+			&book.ApproximateDemand,
+			&book.CreatedAt,
+			&book.UpdatedAt,
 		)
+
 		if err != nil {
-			log.Error().Msgf("[Error] GetAllCheckoutTickets(), rows.Scan err: %v", err)
+			log.Error().Msgf("[Error] GetAllCheckoutTicketsWithDetails(), rows.Scan err: %v", err)
 			return nil, ErrGetCheckoutTicketsFailed
 		}
+
+		ticket.User = user
+		ticket.Book = book
+		ticket.CheckedOutOn = checkedOutOn.Time
+		ticket.ReturnedDate = returnedDate.Time
 		ticket.UpdatedAt = updatedAt.Time
+		ticket.ReservedOn = reservedOn.Time
+
 		tickets = append(tickets, ticket)
 	}
 
 	return tickets, nil
 }
+
+
 
 // UpdateCheckoutTicket updates an existing checkout ticket
 func (l *LibraryService) UpdateCheckoutTicket(ticket *model.UpdateCheckoutTicketRequest) error {

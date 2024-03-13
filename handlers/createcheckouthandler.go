@@ -1,11 +1,13 @@
 package handlers
 
 import (
+	"errors"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 
 	"integrated-library-service/apperror"
+	"integrated-library-service/domain"
 	"integrated-library-service/model"
 )
 
@@ -21,6 +23,12 @@ func (th *LibraryHandler) CreateCheckoutHandler(c *gin.Context) {
 
 	// create checkout is an upsert operation
 	if err := th.domain.CreateCheckoutTicket(&req); err != nil {
+		if errors.Is(domain.ErrPaymentPending, err) {
+			c.JSON(http.StatusBadRequest, gin.H{
+				"message": err.Error(),
+			})
+			return
+		}
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"message": err.Error(),
 		})
