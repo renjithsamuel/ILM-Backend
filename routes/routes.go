@@ -140,12 +140,19 @@ func NewRoutes(libraryHandler *handlers.LibraryHandler) Routes {
 			ProtectedRoute: true,
 			HandlerFunc:    libraryHandler.CreateCheckoutHandler,
 		},
+		// Route{
+		// 	Name:           "Get Checkout Ticket By ID",
+		// 	Method:         http.MethodGet,
+		// 	Pattern:        "/checkouts/:checkoutid",
+		// 	ProtectedRoute: true,
+		// 	HandlerFunc:    libraryHandler.GetCheckoutTicketByIDHandler,
+		// },
 		Route{
-			Name:           "Get Checkout Ticket By ID",
+			Name:           "Get Checkout Ticket By BookID and UserID",
 			Method:         http.MethodGet,
-			Pattern:        "/checkouts/:checkoutid",
+			Pattern:        "/checkouts/:bookid/:userid",
 			ProtectedRoute: true,
-			HandlerFunc:    libraryHandler.GetCheckoutTicketByIDHandler,
+			HandlerFunc:    libraryHandler.GetCheckoutByUserIDHandler,
 		},
 		Route{
 			Name:           "Get All Checkout Tickets Sorted",

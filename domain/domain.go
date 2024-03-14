@@ -27,6 +27,7 @@ type Service interface {
 	// checkout related
 	CreateCheckoutTicket(ticket *model.CreateCheckoutRequest) error
 	GetCheckoutTicketByID(ticketID string) (*model.CheckoutTicket, error)
+	GetCheckoutByUserID(bookID, userID string) (*model.CheckoutTicket, error)
 	GetAllCheckoutTicketsWithDetails() ([]model.CheckoutTicketResponse, error)
 	UpdateCheckoutTicket(ticket *model.UpdateCheckoutTicketRequest) error
 	DeleteCheckoutTicket(ticketID string) error

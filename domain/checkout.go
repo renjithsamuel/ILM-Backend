@@ -19,6 +19,10 @@ var (
 	ErrGetCheckoutTicketsFailed = errors.New("get checkout tickets failed")
 	// ErrGetCheckoutTicketByIDNotFound is an error when get checkout ticket not found
 	ErrGetCheckoutTicketByIDNotFound = errors.New("get checkout ticket not found")
+	// ErrGetCheckoutByUserIDNotFailed is an error when get checkout by userid ticket failed
+	ErrGetCheckoutByUserIDNotFailed = errors.New("get checkout by userid ticket failed")
+	// ErrGetCheckoutByUserIDNotFound is an error when get checkout by userid ticket not found
+	ErrGetCheckoutByUserIDNotFound = errors.New("get checkout by userid not found")
 	// ErrFailedUpdateCheckoutTicket is an error when update checkout ticket failed
 	ErrFailedUpdateCheckoutTicket = errors.New("update checkout ticket failed")
 	// ErrFailedDeleteCheckoutTicket is an error when delete checkout ticket not found
@@ -104,9 +108,9 @@ func (l *LibraryService) GetCheckoutTicketByID(ticketID string) (*model.Checkout
 	`
 
 	var (
-		ticket    model.CheckoutTicket
-		updatedAt sql.NullTime
-		reservedOn sql.NullTime
+		ticket       model.CheckoutTicket
+		updatedAt    sql.NullTime
+		reservedOn   sql.NullTime
 		checkedOutOn sql.NullTime
 		returnedDate sql.NullTime
 	)
@@ -125,12 +129,71 @@ func (l *LibraryService) GetCheckoutTicketByID(ticketID string) (*model.Checkout
 		&updatedAt,
 	)
 
-
-
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			log.Error().Msgf("[Error] GetCheckoutTicketByID(), db.QueryRow err: %v", err)
 			return nil, ErrGetCheckoutTicketByIDNotFound
+		}
+
+		log.Error().Msgf("[Error] GetCheckoutTicketByID(), db.QueryRow err: %v", err)
+		return nil, ErrGetCheckoutTicketByIDFailed
+	}
+	ticket.UpdatedAt = updatedAt.Time
+	ticket.CheckedOutOn = checkedOutOn.Time
+	ticket.ReturnedDate = returnedDate.Time
+	ticket.ReservedOn = reservedOn.Time
+
+	return &ticket, nil
+}
+
+// GetCheckoutByUserID retrieves a checkout ticket by its UserID and BookID
+func (l *LibraryService) GetCheckoutByUserID(bookID, userID string) (*model.CheckoutTicket, error) {
+	sqlStatement := `
+		SELECT 
+			"ID",
+			"bookID",
+			"userID",
+			"isCheckedOut",
+			"isReturned",
+			"numberOfDays",
+			"fineAmount",
+			"reservedOn",
+			"checkedOutOn",
+			"returnedDate",
+			"createdAt",
+			"updatedAt"
+		FROM 
+			"checkout_tickets"
+		WHERE 
+			"bookID" = $1 AND "userID" = $2;
+	`
+
+	var (
+		ticket       model.CheckoutTicket
+		updatedAt    sql.NullTime
+		reservedOn   sql.NullTime
+		checkedOutOn sql.NullTime
+		returnedDate sql.NullTime
+	)
+	err := l.db.QueryRow(sqlStatement, bookID, userID).Scan(
+		&ticket.ID,
+		&ticket.BookID,
+		&ticket.UserID,
+		&ticket.IsCheckedOut,
+		&ticket.IsReturned,
+		&ticket.NumberOfDays,
+		&ticket.FineAmount,
+		&reservedOn,
+		&checkedOutOn,
+		&returnedDate,
+		&ticket.CreatedAt,
+		&updatedAt,
+	)
+
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			log.Error().Msgf("[Error] GetCheckoutTicketByID(), db.QueryRow err: %v", err)
+			return nil, ErrGetCheckoutByUserIDNotFound
 		}
 
 		log.Error().Msgf("[Error] GetCheckoutTicketByID(), db.QueryRow err: %v", err)
@@ -277,8 +340,6 @@ func (l *LibraryService) GetAllCheckoutTicketsWithDetails() ([]model.CheckoutTic
 
 	return tickets, nil
 }
-
-
 
 // UpdateCheckoutTicket updates an existing checkout ticket
 func (l *LibraryService) UpdateCheckoutTicket(ticket *model.UpdateCheckoutTicketRequest) error {
