@@ -164,7 +164,7 @@ func NewRoutes(libraryHandler *handlers.LibraryHandler) Routes {
 		Route{
 			Name:           "Delete Checkout Ticket",
 			Method:         http.MethodDelete,
-			Pattern:        "/checkouts",
+			Pattern:        "/checkouts/:checkoutid",
 			ProtectedRoute: true,
 			HandlerFunc:    libraryHandler.DeleteCheckoutTicketHandler,
 		},

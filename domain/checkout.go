@@ -106,6 +106,9 @@ func (l *LibraryService) GetCheckoutTicketByID(ticketID string) (*model.Checkout
 	var (
 		ticket    model.CheckoutTicket
 		updatedAt sql.NullTime
+		reservedOn sql.NullTime
+		checkedOutOn sql.NullTime
+		returnedDate sql.NullTime
 	)
 	err := l.db.QueryRow(sqlStatement, ticketID).Scan(
 		&ticket.ID,
@@ -115,12 +118,14 @@ func (l *LibraryService) GetCheckoutTicketByID(ticketID string) (*model.Checkout
 		&ticket.IsReturned,
 		&ticket.NumberOfDays,
 		&ticket.FineAmount,
-		&ticket.ReservedOn,
-		&ticket.CheckedOutOn,
-		&ticket.ReturnedDate,
+		&reservedOn,
+		&checkedOutOn,
+		&returnedDate,
 		&ticket.CreatedAt,
 		&updatedAt,
 	)
+
+
 
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
@@ -132,6 +137,9 @@ func (l *LibraryService) GetCheckoutTicketByID(ticketID string) (*model.Checkout
 		return nil, ErrGetCheckoutTicketByIDFailed
 	}
 	ticket.UpdatedAt = updatedAt.Time
+	ticket.CheckedOutOn = checkedOutOn.Time
+	ticket.ReturnedDate = returnedDate.Time
+	ticket.ReservedOn = reservedOn.Time
 
 	return &ticket, nil
 }

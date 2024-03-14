@@ -13,8 +13,6 @@ import (
 
 // UpdateCheckoutTicketHandler updates an existing checkout ticket
 func (th *LibraryHandler) UpdateCheckoutTicketHandler(c *gin.Context) {
-	checkoutID := c.Param("id")
-
 	req := model.UpdateCheckoutTicketRequest{}
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
@@ -24,7 +22,7 @@ func (th *LibraryHandler) UpdateCheckoutTicketHandler(c *gin.Context) {
 	}
 
 	// Check if the checkout ticket exists
-	_, err := th.domain.GetCheckoutTicketByID(checkoutID)
+	_, err := th.domain.GetCheckoutTicketByID(req.ID)
 	if err != nil {
 		if errors.Is(err, domain.ErrGetCheckoutTicketByIDNotFound) {
 			c.JSON(http.StatusNotFound, gin.H{
