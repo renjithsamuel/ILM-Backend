@@ -12,10 +12,15 @@ CREATE TABLE IF NOT EXISTS "books" (
     "coverImage" VARCHAR NOT NULL,
     "shelfNumber" NUMERIC NOT NULL DEFAULT 0,
     "inLibrary" BOOLEAN NOT NULL DEFAULT false,
-    "views" NUMERIC NOT NULL DEFAULT 0,
     "booksLeft" NUMERIC NOT NULL DEFAULT 0,
-    "wishlistCount" NUMERIC NOT NULL DEFAULT 0,
     "rating" REAL NOT NULL DEFAULT 0,
+    -- list
+    "reviewsList" VARCHAR[] NOT NULL DEFAULT '{}',
+    "viewsList" VARCHAR[] NOT NULL DEFAULT '{}',
+    "wishList" VARCHAR[] NOT NULL DEFAULT '{}',
+    -- count
+    "wishlistCount" NUMERIC NOT NULL DEFAULT 0,
+    "views" NUMERIC NOT NULL DEFAULT 0,
     "reviewCount" NUMERIC NOT NULL DEFAULT 0,
     "approximateDemand" NUMERIC NOT NULL DEFAULT 0,
     "createdAt"  TIMESTAMP(3) NOT NULL             DEFAULT NOW(),

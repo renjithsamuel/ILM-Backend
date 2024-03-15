@@ -46,9 +46,12 @@ func (l *LibraryService) CreateBook(book *model.CreateBookRequest) error {
 			"wishlistCount",
 			"rating",
 			"reviewCount",
-			"approximateDemand"
+			"approximateDemand",
+			"reviewsList",
+			"viewsList",
+			"wishList"
 		) VALUES (
-			$1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16
+			$1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19
 		) 
 		ON CONFLICT("ISBN") 
 		DO UPDATE SET
@@ -67,6 +70,9 @@ func (l *LibraryService) CreateBook(book *model.CreateBookRequest) error {
 			"rating" = EXCLUDED."rating",
 			"reviewCount" = EXCLUDED."reviewCount",
 			"approximateDemand" = EXCLUDED."approximateDemand",
+			"reviewsList" = EXCLUDED."reviewsList",
+			"viewsList" = EXCLUDED."viewsList",
+			"wishList" = EXCLUDED."wishList",
 			"updatedAt" = NOW()
 		RETURNING "ID";
 	`
@@ -90,6 +96,9 @@ func (l *LibraryService) CreateBook(book *model.CreateBookRequest) error {
 		book.Rating,
 		book.ReviewCount,
 		book.ApproximateDemand,
+		pq.Array(book.ReviewsList),
+		pq.Array(book.ViewsList),
+		pq.Array(book.WishList),
 	).Scan(&bookID)
 
 	if err != nil {
@@ -134,9 +143,12 @@ func (l *LibraryService) CreateBooksBatch(books []*model.CreateBookRequest) erro
 			"wishlistCount",
 			"rating",
 			"reviewCount",
-			"approximateDemand"
+			"approximateDemand",
+			"reviewsList",
+			"viewsList",
+			"wishList"
 		) VALUES (
-			$1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16
+			$1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19
 		) 
 		ON CONFLICT("ISBN") 
 		DO UPDATE SET
@@ -155,6 +167,9 @@ func (l *LibraryService) CreateBooksBatch(books []*model.CreateBookRequest) erro
 			"rating" = EXCLUDED."rating",
 			"reviewCount" = EXCLUDED."reviewCount",
 			"approximateDemand" = EXCLUDED."approximateDemand",
+			"reviewsList" = EXCLUDED."reviewsList",
+			"viewsList" = EXCLUDED."viewsList",
+			"wishList" = EXCLUDED."wishList",
 			"updatedAt" = NOW()
 		RETURNING "ID";
 	`
@@ -186,6 +201,9 @@ func (l *LibraryService) CreateBooksBatch(books []*model.CreateBookRequest) erro
 			book.Rating,
 			book.ReviewCount,
 			book.ApproximateDemand,
+			pq.Array(book.ReviewsList),
+			pq.Array(book.ViewsList),
+			pq.Array(book.WishList),
 		).Scan(&bookID)
 
 		if err != nil {
@@ -227,7 +245,10 @@ func (l *LibraryService) GetBookByISBN(ISBN string) (*model.Book, error) {
 			"reviewCount",
 			"approximateDemand",
 			"createdAt",
-			"updatedAt"
+			"updatedAt",
+			"reviewsList",
+			"viewsList",
+			"wishList"
 		FROM
 			"books"
 		WHERE
@@ -235,8 +256,11 @@ func (l *LibraryService) GetBookByISBN(ISBN string) (*model.Book, error) {
 	`
 
 	var (
-		book      model.Book
-		updatedAt sql.NullTime
+		book       model.Book
+		updatedAt  sql.NullTime
+		reviewList pq.StringArray
+		viewList   pq.StringArray
+		wishList   pq.StringArray
 	)
 	err := l.db.QueryRow(sqlStatement, ISBN).Scan(
 		&book.ID,
@@ -258,6 +282,9 @@ func (l *LibraryService) GetBookByISBN(ISBN string) (*model.Book, error) {
 		&book.ApproximateDemand,
 		&book.CreatedAt,
 		&updatedAt,
+		&reviewList,
+		&viewList,
+		&wishList,
 	)
 
 	if err != nil {
@@ -270,6 +297,9 @@ func (l *LibraryService) GetBookByISBN(ISBN string) (*model.Book, error) {
 	}
 
 	book.UpdatedAt = &updatedAt.Time
+	book.ReviewsList = reviewList
+	book.ViewsList = viewList
+	book.WishList = wishList
 
 	return &book, nil
 }
@@ -296,7 +326,10 @@ func (l *LibraryService) GetBookWithBookID(bookID string) (*model.Book, error) {
 			"reviewCount",
 			"approximateDemand",
 			"createdAt",
-			"updatedAt"
+			"updatedAt",
+			"reviewsList",
+			"viewsList",
+			"wishList"
 		FROM
 			"books"
 		WHERE
@@ -304,8 +337,11 @@ func (l *LibraryService) GetBookWithBookID(bookID string) (*model.Book, error) {
 	`
 
 	var (
-		book      model.Book
-		updatedAt sql.NullTime
+		book       model.Book
+		updatedAt  sql.NullTime
+		reviewList pq.StringArray
+		viewList   pq.StringArray
+		wishList   pq.StringArray
 	)
 	err := l.db.QueryRow(sqlStatement, bookID).Scan(
 		&book.ID,
@@ -327,6 +363,9 @@ func (l *LibraryService) GetBookWithBookID(bookID string) (*model.Book, error) {
 		&book.ApproximateDemand,
 		&book.CreatedAt,
 		&updatedAt,
+		&reviewList,
+		&viewList,
+		&wishList,
 	)
 
 	if err != nil {
@@ -339,6 +378,9 @@ func (l *LibraryService) GetBookWithBookID(bookID string) (*model.Book, error) {
 	}
 
 	book.UpdatedAt = &updatedAt.Time
+	book.ReviewsList = reviewList
+	book.ViewsList = viewList
+	book.WishList = wishList
 
 	return &book, nil
 }
@@ -365,7 +407,10 @@ func (l *LibraryService) GetAllBooks() ([]model.Book, error) {
 			"reviewCount",
 			"approximateDemand",
 			"createdAt",
-			"updatedAt"
+			"updatedAt",
+			"reviewsList",
+			"viewsList",
+			"wishList"
 		FROM 
 			"books";
 	`
@@ -380,8 +425,11 @@ func (l *LibraryService) GetAllBooks() ([]model.Book, error) {
 	var books []model.Book
 	for rows.Next() {
 		var (
-			book      model.Book
-			updatedAt sql.NullTime
+			book       model.Book
+			updatedAt  sql.NullTime
+			reviewList pq.StringArray
+			viewList   pq.StringArray
+			wishList   pq.StringArray
 		)
 		err := rows.Scan(
 			&book.ID,
@@ -403,12 +451,19 @@ func (l *LibraryService) GetAllBooks() ([]model.Book, error) {
 			&book.ApproximateDemand,
 			&book.CreatedAt,
 			&updatedAt,
+			&reviewList,
+			&viewList,
+			&wishList,
 		)
 		if err != nil {
 			log.Error().Msgf("[Error] GetAllBooks(), rows.Scan err: %v", err)
 			return nil, err
 		}
 		book.UpdatedAt = &updatedAt.Time
+		book.ReviewsList = reviewList
+		book.ViewsList = viewList
+		book.WishList = wishList
+
 		books = append(books, book)
 	}
 
@@ -475,7 +530,10 @@ func (l *LibraryService) GetAllBooksByBookDetailsFrom(request *model.GetAllBooks
 			"reviewCount",
 			"approximateDemand",
 			"createdAt",
-			"updatedAt"
+			"updatedAt",
+			"reviewsList",
+			"viewsList",
+			"wishList"
 		FROM 
 			"books"
 		WHERE 
@@ -492,8 +550,11 @@ func (l *LibraryService) GetAllBooksByBookDetailsFrom(request *model.GetAllBooks
 	var books []model.Book
 	for rows.Next() {
 		var (
-			book      model.Book
-			updatedAt sql.NullTime
+			book       model.Book
+			updatedAt  sql.NullTime
+			reviewList pq.StringArray
+			viewList   pq.StringArray
+			wishList   pq.StringArray
 		)
 		err := rows.Scan(
 			&book.ID,
@@ -515,12 +576,19 @@ func (l *LibraryService) GetAllBooksByBookDetailsFrom(request *model.GetAllBooks
 			&book.ApproximateDemand,
 			&book.CreatedAt,
 			&updatedAt,
+			&reviewList,
+			&viewList,
+			&wishList,
 		)
 		if err != nil {
 			log.Error().Msgf("[Error] GetAllBooks(), rows.Scan err: %v", err)
 			return nil, err
 		}
 		book.UpdatedAt = &updatedAt.Time
+		book.ReviewsList = reviewList
+		book.ViewsList = viewList
+		book.WishList = wishList
+
 		books = append(books, book)
 	}
 
@@ -546,7 +614,10 @@ func (l *LibraryService) UpdateBook(book *model.UpdateBookRequest) error {
 			"rating" = $14,
 			"reviewCount" = $15,
 			"approximateDemand" = $16,
-			"updatedAt" = $17
+			"updatedAt" = $17,
+			"reviewsList" = $18,
+			"viewsList" = $19,
+			"wishList" = $20
 		WHERE
 			"ISBN" = $1;
 	`
@@ -571,6 +642,9 @@ func (l *LibraryService) UpdateBook(book *model.UpdateBookRequest) error {
 		book.ReviewCount,
 		book.ApproximateDemand,
 		updatedAt,
+		pq.Array(book.ReviewsList),
+		pq.Array(book.ViewsList),
+		pq.Array(book.WishList),
 	)
 
 	if err != nil {
