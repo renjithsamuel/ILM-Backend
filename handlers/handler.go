@@ -35,7 +35,7 @@ type Handler interface {
 	GetAllBooksHandler(c *gin.Context)
 	// checkout related
 	CreateCheckoutHandler(c *gin.Context)
-	GetCheckoutTicketByIDHandler(c *gin.Context)
+	GetCheckoutsByUserIDHandler(c *gin.Context)
 	GetAllCheckoutTicketsHandler(c *gin.Context)
 	UpdateCheckoutTicketHandler(c *gin.Context)
 	DeleteCheckoutTicketHandler(c *gin.Context)

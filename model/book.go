@@ -97,7 +97,3 @@ type UpdateBookRequest struct {
 	ReviewCount       *int64 `json:"reviewCount" binding:"required"`
 	ApproximateDemand *int64 `json:"approximateDemand" binding:"omitempty"`
 }
-
-// todo get average rating?
-// todo user cannot get the book twice
-// todo if constraint removed on conflict have to be removed and get condition need to accept an array of responses

@@ -34,3 +34,19 @@ type UpdateReviewRequest struct {
 	Rating         float64 `json:"rating" binding:"required"`
 	Likes          int64   `json:"likes" binding:"required"`
 }
+
+// RatingEntity contains number of ratings against each ratings point
+type RatingEntity struct {
+	OneStar   uint32 `json:"1star"`
+	TwoStar   uint32 `json:"2star"`
+	ThreeStar uint32 `json:"3star"`
+	FourStar  uint32 `json:"4star"`
+	FiveStar  uint32 `json:"5star"`
+}
+
+// GetAverageRatingResponse ..
+type GetAverageRatingResponse struct {
+	Rating       *float64     `json:"rating"`
+	TotalReviews uint32       `json:"totalReviews"`
+	RatingEntity RatingEntity `json:"ratingEntity"`
+}

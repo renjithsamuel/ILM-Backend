@@ -301,6 +301,14 @@ func (l *LibraryService) GetBookByISBN(ISBN string) (*model.Book, error) {
 	book.ViewsList = viewList
 	book.WishList = wishList
 
+	// get ratings from helper
+	ratings, err := l.getAverageRating(book.ID)
+	if err != nil && errors.Is(err, ErrRatingNotFound) {
+		log.Error().Msgf("[Error] GetAllBooks(), getAverageRating err: %v", err)
+		return nil, err
+	}
+	book.Rating = float64(*ratings.Rating)
+
 	return &book, nil
 }
 
@@ -381,6 +389,14 @@ func (l *LibraryService) GetBookWithBookID(bookID string) (*model.Book, error) {
 	book.ReviewsList = reviewList
 	book.ViewsList = viewList
 	book.WishList = wishList
+
+	// get ratings from helper
+	ratings, err := l.getAverageRating(book.ID)
+	if err != nil && errors.Is(err, ErrRatingNotFound) {
+		log.Error().Msgf("[Error] GetAllBooks(), getAverageRating err: %v", err)
+		return nil, err
+	}
+	book.Rating = float64(*ratings.Rating)
 
 	return &book, nil
 }
@@ -463,6 +479,14 @@ func (l *LibraryService) GetAllBooks() ([]model.Book, error) {
 		book.ReviewsList = reviewList
 		book.ViewsList = viewList
 		book.WishList = wishList
+
+		// get ratings from helper
+		ratings, err := l.getAverageRating(book.ID)
+		if err != nil && errors.Is(err, ErrRatingNotFound) {
+			log.Error().Msgf("[Error] GetAllBooks(), getAverageRating err: %v", err)
+			return nil, err
+		}
+		book.Rating = float64(*ratings.Rating)
 
 		books = append(books, book)
 	}
@@ -588,6 +612,14 @@ func (l *LibraryService) GetAllBooksByBookDetailsFrom(request *model.GetAllBooks
 		book.ReviewsList = reviewList
 		book.ViewsList = viewList
 		book.WishList = wishList
+
+		// get ratings from helper
+		ratings, err := l.getAverageRating(book.ID)
+		if err != nil && errors.Is(err, ErrRatingNotFound) {
+			log.Error().Msgf("[Error] GetAllBooks(), getAverageRating err: %v", err)
+			return nil, err
+		}
+		book.Rating = float64(*ratings.Rating)
 
 		books = append(books, book)
 	}

@@ -13,6 +13,8 @@ import (
 var (
 	// ErrFailedCreateCheckoutTicket is an error when create checkout failed
 	ErrFailedCreateCheckoutTicket = errors.New("create checkout failed")
+	// ErrFailedCreateCheckoutTicketConflict is an error when create checkout failed conflict
+	ErrFailedCreateCheckoutTicketConflict = errors.New("create checkout failed with conflict")
 	// ErrGetCheckoutTicketByIDFailed is an error when get checkout ticket failed
 	ErrGetCheckoutTicketByIDFailed = errors.New("get checkout ticket failed")
 	// ErrGetCheckoutTicketsFailed is an error when get checkout tickets failed
@@ -55,6 +57,20 @@ func (l *LibraryService) CreateCheckoutTicket(ticket *model.CreateCheckoutReques
 		return ErrOutOfStock
 	}
 
+	// if other checkouts which has the same book ID and userID is there, he is spamming
+	otherCheckouts, err := l.GetCheckoutsByUserID(ticket.BookID, ticket.UserID)
+	if err != nil {
+		log.Error().Msgf("[Error] CreateCheckoutTicket(), GetCheckoutsByUserID err: %v", err)
+		return ErrFailedCreateCheckoutTicket
+	}
+
+	for _, checkout := range otherCheckouts {
+		if !checkout.IsReturned {
+			log.Error().Msgf("[Error] CreateCheckoutTicket(), Book is already Pending Return")
+			return ErrFailedCreateCheckoutTicketConflict
+		}
+	}
+
 	sqlStatement := `
 		INSERT INTO "checkout_tickets"(
 			"bookID",
@@ -63,9 +79,7 @@ func (l *LibraryService) CreateCheckoutTicket(ticket *model.CreateCheckoutReques
 			"reservedOn"
 		) VALUES (
 			$1, $2, $3, $4
-		) ON CONFLICT ("bookID" , "userID") 
-			DO UPDATE SET
-				"numberOfDays" = EXCLUDED."numberOfDays";
+		);
 	`
 
 	updateAt := time.Now().UTC().Format(time.RFC1123)
@@ -146,8 +160,8 @@ func (l *LibraryService) GetCheckoutTicketByID(ticketID string) (*model.Checkout
 	return &ticket, nil
 }
 
-// GetCheckoutByUserID retrieves a checkout ticket by its UserID and BookID
-func (l *LibraryService) GetCheckoutByUserID(bookID, userID string) (*model.CheckoutTicket, error) {
+// GetCheckoutsByUserID retrieves a checkout tickets by its UserID and BookID
+func (l *LibraryService) GetCheckoutsByUserID(bookID, userID string) ([]model.CheckoutTicket, error) {
 	sqlStatement := `
 		SELECT 
 			"ID",
@@ -168,43 +182,47 @@ func (l *LibraryService) GetCheckoutByUserID(bookID, userID string) (*model.Chec
 			"bookID" = $1 AND "userID" = $2;
 	`
 
-	var (
-		ticket       model.CheckoutTicket
-		updatedAt    sql.NullTime
-		reservedOn   sql.NullTime
-		checkedOutOn sql.NullTime
-		returnedDate sql.NullTime
-	)
-	err := l.db.QueryRow(sqlStatement, bookID, userID).Scan(
-		&ticket.ID,
-		&ticket.BookID,
-		&ticket.UserID,
-		&ticket.IsCheckedOut,
-		&ticket.IsReturned,
-		&ticket.NumberOfDays,
-		&ticket.FineAmount,
-		&reservedOn,
-		&checkedOutOn,
-		&returnedDate,
-		&ticket.CreatedAt,
-		&updatedAt,
-	)
-
+	rows, err := l.db.Query(sqlStatement, bookID, userID)
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			log.Error().Msgf("[Error] GetCheckoutTicketByID(), db.QueryRow err: %v", err)
-			return nil, ErrGetCheckoutByUserIDNotFound
-		}
-
-		log.Error().Msgf("[Error] GetCheckoutTicketByID(), db.QueryRow err: %v", err)
+		log.Error().Msgf("[Error] GetCheckoutsTicketByID(), db.QueryRow err: %v", err)
 		return nil, ErrGetCheckoutTicketByIDFailed
 	}
-	ticket.UpdatedAt = updatedAt.Time
-	ticket.CheckedOutOn = checkedOutOn.Time
-	ticket.ReturnedDate = returnedDate.Time
-	ticket.ReservedOn = reservedOn.Time
+	var tickets []model.CheckoutTicket
+	for rows.Next() {
+		var (
+			ticket       model.CheckoutTicket
+			updatedAt    sql.NullTime
+			reservedOn   sql.NullTime
+			checkedOutOn sql.NullTime
+			returnedDate sql.NullTime
+		)
+		err := rows.Scan(
+			&ticket.ID,
+			&ticket.BookID,
+			&ticket.UserID,
+			&ticket.IsCheckedOut,
+			&ticket.IsReturned,
+			&ticket.NumberOfDays,
+			&ticket.FineAmount,
+			&reservedOn,
+			&checkedOutOn,
+			&returnedDate,
+			&ticket.CreatedAt,
+			&updatedAt,
+		)
 
-	return &ticket, nil
+		if err != nil {
+			log.Error().Msgf("[Error] GetCheckoutsByUserID(), rows.Scan err: %v", err)
+			return nil, ErrGetCheckoutTicketByIDFailed
+		}
+		ticket.UpdatedAt = updatedAt.Time
+		ticket.CheckedOutOn = checkedOutOn.Time
+		ticket.ReturnedDate = returnedDate.Time
+		ticket.ReservedOn = reservedOn.Time
+		tickets = append(tickets, ticket)
+	}
+
+	return tickets, nil
 }
 
 // GetAllCheckoutTicketsWithDetails retrieves all checkout tickets with associated user and book data

@@ -23,6 +23,12 @@ func (th *LibraryHandler) CreateCheckoutHandler(c *gin.Context) {
 
 	// create checkout is an upsert operation
 	if err := th.domain.CreateCheckoutTicket(&req); err != nil {
+		if errors.Is(domain.ErrFailedCreateCheckoutTicketConflict, err) {
+			c.JSON(http.StatusConflict, gin.H{
+				"message": err.Error(),
+			})
+			return
+		}
 		if errors.Is(domain.ErrPaymentPending, err) {
 			c.JSON(http.StatusBadRequest, gin.H{
 				"message": err.Error(),
