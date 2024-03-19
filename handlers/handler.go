@@ -6,6 +6,7 @@ import (
 
 	"integrated-library-service/apperror"
 	"integrated-library-service/domain"
+	"integrated-library-service/googlebooks"
 )
 
 var (
@@ -33,6 +34,7 @@ type Handler interface {
 	CreateBooksBatchHandler(c *gin.Context)
 	GetBookByISBNHandler(c *gin.Context)
 	GetAllBooksHandler(c *gin.Context)
+	GetAllNewBooksHandler(c *gin.Context)
 	// checkout related
 	CreateCheckoutHandler(c *gin.Context)
 	GetCheckoutsByUserIDHandler(c *gin.Context)
@@ -48,15 +50,17 @@ type Handler interface {
 }
 
 type LibraryHandler struct {
-	domain    domain.Service
-	secretKey string
+	domain             domain.Service
+	secretKey          string
+	googleBooksService *googlebooks.GoogleBooksClient
 }
 
 // NewLibraryHandler returns new instance of Handler.
-func NewLibraryHandler(domain domain.Service, secretKey string) *LibraryHandler {
+func NewLibraryHandler(domain domain.Service, secretKey string, googleBooksService *googlebooks.GoogleBooksClient) *LibraryHandler {
 	h := &LibraryHandler{
-		domain:    domain,
-		secretKey: secretKey,
+		domain:             domain,
+		secretKey:          secretKey,
+		googleBooksService: googleBooksService,
 	}
 
 	return h

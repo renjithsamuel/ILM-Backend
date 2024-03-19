@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"integrated-library-service/domain"
+	"integrated-library-service/googlebooks"
 	"integrated-library-service/handlers"
 	"integrated-library-service/middleware"
 	"integrated-library-service/routes"
@@ -36,7 +37,9 @@ var (
 	port string
 
 	// other variables
-	secretKey string
+	secretKey        string
+	googleAPIKey     string
+	googleAPIBaseUrl string
 
 	// program controller
 	done      = make(chan struct{})
@@ -50,6 +53,9 @@ func init() {
 		panic(err)
 	}
 	secretKey = os.Getenv("JWT_SECRET_KEY")
+	googleAPIKey = os.Getenv("GOOGLE_BOOKS_API_KEY")
+	googleAPIBaseUrl = os.Getenv("GOOGLE_BOOKS_BASE_URL")
+
 	flag.BoolVar(&versionFlag, "version", false, "show current version and exit")
 	flag.BoolVar(&helpFlag, "help", false, "show usage and exit")
 	flag.StringVar(&port, "port", ":8000", "server port")
@@ -134,10 +140,14 @@ func main() {
 	log.Println("DB connection is successful")
 	defer db.Close()
 
+	// google api client
+	googleClient := googlebooks.GetClient(time.Minute)
+	googleBooksService := googlebooks.NewGoogleService(googleAPIBaseUrl, googleAPIKey, googleClient)
+
 	// create library service
 	libraryService := domain.NewLibraryService(db)
 
-	libraryHandler := handlers.NewLibraryHandler(libraryService, secretKey)
+	libraryHandler := handlers.NewLibraryHandler(libraryService, secretKey, googleBooksService)
 	apiRoutes := routes.NewRoutes(libraryHandler)
 	routes.AttachRoutes(ilmGroup, apiRoutes, authMiddleware)
 

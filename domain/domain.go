@@ -22,6 +22,7 @@ type Service interface {
 	GetBookByISBN(ISBN string) (*model.Book, error)
 	GetAllBooks() ([]model.Book, error)
 	GetAllBooksByBookDetailsFrom(request *model.GetAllBooksByBookDetailsFromRequest) ([]model.Book, error)
+	GetAllBooksFromSpecific(request []string) ([]model.Book, error)
 	CreateBooksBatch(books []*model.CreateBookRequest) error
 	UpdateBook(book *model.UpdateBookRequest) error
 	// checkout related

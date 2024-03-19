@@ -494,6 +494,101 @@ func (l *LibraryService) GetAllBooks() ([]model.Book, error) {
 	return books, nil
 }
 
+// GetAllBooksFromSpecific retrieves all books from the database for given string arr
+func (l *LibraryService) GetAllBooksFromSpecific(request []string) ([]model.Book, error) {
+	sqlStatement := `
+		SELECT 
+			"ID",
+			"ISBN",
+			"title",
+			"author",
+			"genre",
+			"publishedDate",
+			"desc",
+			"previewLink",
+			"coverImage",
+			"shelfNumber",
+			"inLibrary",
+			"views",
+			"booksLeft",
+			"wishlistCount",
+			"rating",
+			"reviewCount",
+			"approximateDemand",
+			"createdAt",
+			"updatedAt",
+			"reviewsList",
+			"viewsList",
+			"wishList"
+		FROM 
+			"books"
+		WHERE 
+			"ISBN" = ANY($1);
+	`
+
+	rows, err := l.db.Query(sqlStatement, pq.Array(request))
+	if err != nil {
+		log.Error().Msgf("[Error] GetAllBooksFromSpecific(), db.Query err: %v", err)
+		return nil, err
+	}
+	defer rows.Close()
+
+	var books []model.Book
+	for rows.Next() {
+		var (
+			book       model.Book
+			updatedAt  sql.NullTime
+			reviewList pq.StringArray
+			viewList   pq.StringArray
+			wishList   pq.StringArray
+		)
+		err := rows.Scan(
+			&book.ID,
+			&book.ISBN,
+			&book.Title,
+			&book.Author,
+			&book.Genre,
+			&book.PublishedDate,
+			&book.Description,
+			&book.PreviewLink,
+			&book.CoverImage,
+			&book.ShelfNumber,
+			&book.InLibrary,
+			&book.Views,
+			&book.BooksLeft,
+			&book.WishlistCount,
+			&book.Rating,
+			&book.ReviewCount,
+			&book.ApproximateDemand,
+			&book.CreatedAt,
+			&updatedAt,
+			&reviewList,
+			&viewList,
+			&wishList,
+		)
+		if err != nil {
+			log.Error().Msgf("[Error] GetAllBooksFromSpecific(), rows.Scan err: %v", err)
+			return nil, err
+		}
+		book.UpdatedAt = &updatedAt.Time
+		book.ReviewsList = reviewList
+		book.ViewsList = viewList
+		book.WishList = wishList
+
+		// get ratings from helper
+		ratings, err := l.getAverageRating(book.ID)
+		if err != nil && errors.Is(err, ErrRatingNotFound) {
+			log.Error().Msgf("[Error] GetAllBooksFromSpecific(), getAverageRating err: %v", err)
+			return nil, err
+		}
+		book.Rating = float64(*ratings.Rating)
+
+		books = append(books, book)
+	}
+
+	return books, nil
+}
+
 // getAllBooksByBookDetailsFrom retrieves all books from the database which match the condition
 func (l *LibraryService) GetAllBooksByBookDetailsFrom(request *model.GetAllBooksByBookDetailsFromRequest) ([]model.Book, error) {
 	getBookDetailsSqlStatement := `

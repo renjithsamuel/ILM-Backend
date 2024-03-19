@@ -8,6 +8,7 @@ import (
 
 	"integrated-library-service/apperror"
 	"integrated-library-service/domain"
+	"integrated-library-service/model"
 )
 
 // GetCheckoutByUserIDHandler retrieves a checkout ticket by its UserID and BookID
@@ -27,11 +28,11 @@ func (th *LibraryHandler) GetCheckoutsByUserIDHandler(c *gin.Context) {
 	checkoutTickets, err := th.domain.GetCheckoutsByUserID(req.BookID, req.UserID)
 	if err != nil {
 		if errors.Is(domain.ErrGetCheckoutByUserIDNotFound, err) {
-			c.JSON(http.StatusNotFound, gin.H{
-				"message": err.Error(),
+			c.JSON(http.StatusOK, gin.H{
+				"checkoutTickets": []model.CheckoutTicket{},
 			})
 			return
-		}
+		}	
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"message": err.Error(),
 		})

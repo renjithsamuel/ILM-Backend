@@ -40,19 +40,19 @@ type CreateBookRequest struct {
 	Description   string    `json:"desc"`
 	PreviewLink   string    `json:"previewLink"`
 	CoverImage    string    `json:"coverImage" binding:"required"`
-	ShelfNumber   int64     `json:"shelfNumber" binding:"required"`
-	InLibrary     bool      `json:"inLibrary" binding:"required"`
-	Views         int64     `json:"views" binding:"required"`
-	BooksLeft     int64     `json:"booksLeft" binding:"required"`
+	ShelfNumber   *int64    `json:"shelfNumber" binding:"omitempty"`
+	InLibrary     *bool     `json:"inLibrary" binding:"omitempty"`
+	Views         *int64    `json:"views" binding:"omitempty"`
+	BooksLeft     *int64    `json:"booksLeft" binding:"omitempty"`
 	// list
 	WishList    []string `json:"wishList"`
 	ReviewsList []string `json:"reviewsList"`
 	ViewsList   []string `json:"viewsList"`
 	// count
-	WishlistCount     int64   `json:"wishlistCount" binding:"required"`
-	Rating            float64 `json:"rating" binding:"required"`
-	ReviewCount       int64   `json:"reviewCount" binding:"required"`
-	ApproximateDemand int64   `json:"approximateDemand" binding:"omitempty"`
+	WishlistCount     *int64   `json:"wishlistCount" binding:"omitempty"`
+	Rating            *float64 `json:"rating" binding:"omitempty"`
+	ReviewCount       *int64   `json:"reviewCount" binding:"omitempty"`
+	ApproximateDemand *int64   `json:"approximateDemand" binding:"omitempty"`
 }
 
 type GetBookByISBNRequest struct {
@@ -84,7 +84,7 @@ type UpdateBookRequest struct {
 	PreviewLink   string    `json:"previewLink"`
 	CoverImage    string    `json:"coverImage" binding:"required"`
 	ShelfNumber   *int64    `json:"shelfNumber" binding:"required"`
-	InLibrary     bool      `json:"inLibrary" binding:"required"`
+	InLibrary     *bool     `json:"inLibrary" binding:"omitempty"`
 	BooksLeft     *int64    `json:"booksLeft" binding:"required"`
 	Rating        *float64  `json:"rating" binding:"required"`
 	// list
@@ -96,4 +96,11 @@ type UpdateBookRequest struct {
 	WishlistCount     *int64 `json:"wishlistCount" binding:"required"`
 	ReviewCount       *int64 `json:"reviewCount" binding:"required"`
 	ApproximateDemand *int64 `json:"approximateDemand" binding:"omitempty"`
+}
+
+// GetAllNewBooksRequest
+type GetAllNewBooksRequest struct {
+	OrderBy string `json:"orderBy" form:"orderBy" binding:"required"`
+	Page    uint32 `json:"page" form:"page" binding:"required"`
+	Limit   uint32 `json:"limit" form:"limit" binding:"required"`
 }

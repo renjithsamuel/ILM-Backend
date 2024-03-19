@@ -119,6 +119,20 @@ func NewRoutes(libraryHandler *handlers.LibraryHandler) Routes {
 			HandlerFunc:    libraryHandler.GetAllBooksHandler,
 		},
 		Route{
+			Name:           "Get All Books From Specific List",
+			Method:         http.MethodPost,
+			Pattern:        "/allbooks/specific",
+			ProtectedRoute: true,
+			HandlerFunc:    libraryHandler.GetAllBooksFromSpecificHandler,
+		},
+		Route{
+			Name:           "Get All Books New From Google",
+			Method:         http.MethodGet,
+			Pattern:        "/allbooks/google",
+			ProtectedRoute: true,
+			HandlerFunc:    libraryHandler.GetAllNewBooksHandler,
+		},
+		Route{
 			Name:           "Update Book by ISBN",
 			Method:         http.MethodPut,
 			Pattern:        "/books",
