@@ -3,6 +3,7 @@ package domain
 import (
 	"database/sql"
 	"errors"
+	"fmt"
 	"time"
 
 	"integrated-library-service/model"
@@ -226,7 +227,7 @@ func (l *LibraryService) GetCheckoutsByUserID(bookID, userID string) ([]model.Ch
 }
 
 // GetAllCheckoutTicketsWithDetails retrieves all checkout tickets with associated user and book data
-func (l *LibraryService) GetAllCheckoutTicketsWithDetails() ([]model.CheckoutTicketResponse, error) {
+func (l *LibraryService) GetAllCheckoutTicketsWithDetails(request *model.GetAllCheckoutData) ([]model.CheckoutTicketResponse, error) {
 	sqlStatement := `
 		SELECT 
 			ct."ID",
@@ -276,8 +277,35 @@ func (l *LibraryService) GetAllCheckoutTicketsWithDetails() ([]model.CheckoutTic
 		INNER JOIN
 			"users" u ON ct."userID" = u."userID"
 		INNER JOIN
-			"books" b ON ct."bookID" = b."ID";
+			"books" b ON ct."bookID" = b."ID"
+		ORDER BY 
+			%s -- orderby
+		%s; -- criteria for limit and offset 	
+		;
 	`
+
+	orderBy := `%s ASC`
+
+	if *request.OrderBy == "descending" {
+		orderBy = `%s DESC`
+	}
+
+	switch *request.SortBy {
+	case "reservedOn":
+		orderBy = fmt.Sprintf(orderBy, `ct."reservedOn"`)
+	case "checkedoutOn":
+		orderBy = fmt.Sprintf(orderBy, `ct."checkedOutOn"`)
+	case "returnedOn":
+		orderBy = fmt.Sprintf(orderBy, `ct."returnedDate"`)
+	case "fineAmount":
+		orderBy = fmt.Sprintf(orderBy, `ct."fineAmount"`)
+	default:
+		orderBy = fmt.Sprintf(orderBy, `ct."reservedOn"`)
+	}
+
+	limitOffset := ` LIMIT %d OFFSET %d`
+	limitOffset = fmt.Sprintf(limitOffset, *request.Limit, (*request.Page-1)*(*request.Limit))
+	sqlStatement = fmt.Sprintf(sqlStatement, orderBy, limitOffset)
 
 	rows, err := l.db.Query(sqlStatement)
 	if err != nil {

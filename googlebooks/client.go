@@ -11,14 +11,15 @@ import (
 
 // Client ...
 type Client interface {
-	GetGoogleBooks(request *model.GetAllNewBooksRequest) ([]model.Book, int, error)
+	GetGoogleBooks(request *model.GetAllBooksRequest) ([]*model.CreateBookRequest, int, error)
+	SearchGoogleBooks(request *model.SearchRequest) ([]*model.CreateBookRequest, int, error)
 }
 
 // GoogleBooksClient
 type GoogleBooksClient struct {
 	url    string
 	apiKey string
-	client *http.Client 
+	client *http.Client
 }
 
 // New returns new instance of NewGoogleService

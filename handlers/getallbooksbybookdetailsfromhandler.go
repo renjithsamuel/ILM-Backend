@@ -9,7 +9,7 @@ import (
 	"integrated-library-service/model"
 )
 
-// GetAllBooksByBookDetailsFromHandler retrieves all books matching the condition
+// GetAllBooksByBookDetailsFromHandler retrieves all books matching the condition [this is used in user book list]
 func (th *LibraryHandler) GetAllBooksByBookDetailsFromHandler(c *gin.Context) {
 	req := model.GetAllBooksByBookDetailsFromRequest{}
 	if err := c.ShouldBindUri(&req); err != nil {

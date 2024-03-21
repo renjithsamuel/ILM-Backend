@@ -2,30 +2,32 @@ package googlebooks
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"integrated-library-service/model"
 	"io"
 	"net/http"
-	"time"
 
 	"github.com/rs/zerolog/log"
 )
 
-var (
-	// ErrGetGoogleBooks is an error when get books failed
-	ErrGetGoogleBooks = errors.New("get google books failed")
-)
-
 // GetGoogleBooks gets required google books
-func (g *GoogleBooksClient) GetGoogleBooks(request *model.GetAllBooksRequest) ([]*model.CreateBookRequest, int, error) {
-	// requestBody, err := json.Marshal(&createCustomerAccountRequest)
-	// if err != nil {
-	// 	log.Error().Msgf("marshal error : %v ", err)
-	// 	return nil, &CustomerAccountCreateResponse{Response: ErrorResponse(err, false)}
-	// }
+func (g *GoogleBooksClient) SearchGoogleBooks(request *model.SearchRequest) ([]*model.CreateBookRequest, int, error) {
 	startIndex := ((*request.Page) - 1) * *request.Limit
-	url := fmt.Sprintf("/v1/volumes?q=orderBy=%v&startIndex=%v&maxResults=%v&key=%v", "newest", startIndex, request.Limit, g.apiKey)
+
+	searchQuery := *request.SearchText
+
+	switch *request.SearchBy {
+	case "title":
+		searchQuery = fmt.Sprintf("intitle:%s", *request.SearchText)
+	case "author":
+		searchQuery = fmt.Sprintf("inauthor:%s", *request.SearchText)
+	case "isbn":
+		searchQuery = fmt.Sprintf("isbn:%s", *request.SearchText)
+	}
+
+	// Construct the URL
+	url := fmt.Sprintf("/v1/volumes?q=%s&orderBy=%v&startIndex=%v&maxResults=%v&key=%v", searchQuery, "relevance", startIndex, request.Limit, g.apiKey)
+
 	req, err := http.NewRequest(http.MethodGet, url, nil)
 	if err != nil {
 		log.Error().Msgf("http request error : %v ", err)
@@ -103,32 +105,4 @@ func (g *GoogleBooksClient) GetGoogleBooks(request *model.GetAllBooksRequest) ([
 	}
 
 	return books, googleBooks.TotalItems, nil
-}
-
-func convertAndFormatDate(dateStr string) (*time.Time, error) {
-	var layout string
-	// Check if the length is 4 to handle YYYY format
-	if len(dateStr) == 4 {
-		layout = "2006"
-	} else {
-		// Try parsing with YYYY-MM-DD format first (common case)
-		layout = "2006-01-02"
-		_, err := time.Parse(layout, dateStr)
-		// If parsing fails, try other layouts (add more as needed)
-		if err != nil {
-			// Example trying alternative layout (e.g., DD-MM-YYYY)
-			layout = "02-01-2006"
-			_, err = time.Parse(layout, dateStr)
-			if err != nil {
-				return nil, fmt.Errorf("invalid date format: %s", dateStr)
-			}
-		}
-	}
-
-	t, err := time.Parse(layout, dateStr)
-	if err != nil {
-		return nil, err
-	}
-	time := t.UTC()
-	return &time, nil
 }

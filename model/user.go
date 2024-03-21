@@ -43,3 +43,19 @@ type LoginUserRequest struct {
 	Email    string `json:"email" binding:"required,email"`
 	Password string `json:"password" binding:"required,min=8,max=20,validatepassword"`
 }
+
+// GetAllUsersRequest
+type GetAllUsersRequest struct {
+	Page    *uint32 `json:"page" form:"page" binding:"required,min=1"`
+	Limit   *uint32 `json:"limit" form:"limit" binding:"required,min=5"`
+	SortBy  *string `json:"sortBy" form:"sortBy" binding:"required"`
+	OrderBy *string `json:"orderBy" form:"orderBy" binding:"required"`
+}
+
+// SortPagination
+type SortPagination struct {
+	Page    *uint32 `json:"page" form:"page" binding:"required,min=1"`
+	Limit   *uint32 `json:"limit" form:"limit" binding:"required,min=5"`
+	SortBy  *string `json:"sortBy" form:"sortBy" binding:"required"`
+	OrderBy *string `json:"orderBy" form:"orderBy" binding:"required"`
+}

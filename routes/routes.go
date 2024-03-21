@@ -225,6 +225,14 @@ func NewRoutes(libraryHandler *handlers.LibraryHandler) Routes {
 			ProtectedRoute: true,
 			HandlerFunc:    libraryHandler.DeleteReviewHandler,
 		},
+		// search related
+		Route{
+			Name:           "Search All",
+			Method:         http.MethodGet,
+			Pattern:        "/search",
+			ProtectedRoute: true,
+			HandlerFunc:    libraryHandler.SearchHandler,
+		},
 	}
 }
 

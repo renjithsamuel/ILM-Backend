@@ -98,9 +98,18 @@ type UpdateBookRequest struct {
 	ApproximateDemand *int64 `json:"approximateDemand" binding:"omitempty"`
 }
 
-// GetAllNewBooksRequest
-type GetAllNewBooksRequest struct {
-	OrderBy string `json:"orderBy" form:"orderBy" binding:"required"`
-	Page    uint32 `json:"page" form:"page" binding:"required"`
-	Limit   uint32 `json:"limit" form:"limit" binding:"required"`
+// GetAllBooksRequest
+type GetAllBooksRequest struct {
+	Page    *uint32 `json:"page" form:"page" binding:"required,min=1"`
+	Limit   *uint32 `json:"limit" form:"limit" binding:"required,min=5"`
+	SortBy  *string `json:"sortBy" form:"sortBy" binding:"required"`
+	OrderBy *string `json:"orderBy" form:"orderBy" binding:"required"`
+}
+
+// GetAllCheckoutData
+type GetAllCheckoutData struct {
+	Page    *uint32 `json:"page" form:"page" binding:"required,min=1"`
+	Limit   *uint32 `json:"limit" form:"limit" binding:"required,min=5"`
+	SortBy  *string `json:"sortBy" form:"sortBy" binding:"required"`
+	OrderBy *string `json:"orderBy" form:"orderBy" binding:"required"`
 }

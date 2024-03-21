@@ -50,3 +50,10 @@ type GetAverageRatingResponse struct {
 	TotalReviews uint32       `json:"totalReviews"`
 	RatingEntity RatingEntity `json:"ratingEntity"`
 }
+
+// ReviewSort
+type ReviewSort struct {
+	Page   *uint32 `json:"page" form:"page" binding:"required,min=1"`
+	Limit  *uint32 `json:"limit" form:"limit" binding:"required,min=5"`
+	SortBy *string `json:"sortBy" form:"sortBy" binding:"required"`
+}

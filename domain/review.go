@@ -3,6 +3,7 @@ package domain
 import (
 	"database/sql"
 	"errors"
+	"fmt"
 	"time"
 
 	"integrated-library-service/model"
@@ -119,9 +120,8 @@ func (l *LibraryService) GetReviewByID(reviewID string) (*model.Review, error) {
 	return &review, nil
 }
 
-
 // GetReviewsByBookID retrieves all reviews for a particular book
-func (l *LibraryService) GetReviewsByBookID(bookID string) ([]model.Review, error) {
+func (l *LibraryService) GetReviewsByBookID(bookID string, request *model.ReviewSort) ([]model.Review, error) {
 	sqlStatement := `
 		SELECT 
 			"ID",
@@ -137,8 +137,29 @@ func (l *LibraryService) GetReviewsByBookID(bookID string) ([]model.Review, erro
 		FROM 
 			"reviews"
 		WHERE 
-			"bookID" = $1;
+			"bookID" = $1
+		ORDER BY 
+			%s -- orderby
+		%s; -- criteria for limit and offset 	
+		;
 	`
+
+	orderBy := `%s`
+
+	switch *request.SortBy {
+	case "likes":
+		orderBy = fmt.Sprintf(orderBy, `"likes" DESC`)
+	case "newest":
+		orderBy = fmt.Sprintf(orderBy, `"createdAt" DESC`)
+	case "oldest":
+		orderBy = fmt.Sprintf(orderBy, `"createdAt" ASC`)
+	default:
+		orderBy = fmt.Sprintf(orderBy, `"createdAt" DESC`)
+	}
+
+	limitOffset := ` LIMIT %d OFFSET %d`
+	limitOffset = fmt.Sprintf(limitOffset, *request.Limit, (*request.Page-1)*(*request.Limit))
+	sqlStatement = fmt.Sprintf(sqlStatement, orderBy, limitOffset)
 
 	rows, err := l.db.Query(sqlStatement, bookID)
 	if err != nil {
@@ -276,4 +297,3 @@ func (l *LibraryService) DeleteReview(reviewID string) error {
 
 	return nil
 }
-

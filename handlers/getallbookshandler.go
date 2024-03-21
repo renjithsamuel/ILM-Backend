@@ -1,6 +1,8 @@
 package handlers
 
 import (
+	"integrated-library-service/apperror"
+	"integrated-library-service/model"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -8,10 +10,15 @@ import (
 
 // get all books handler retrieves all books
 func (th *LibraryHandler) GetAllBooksHandler(c *gin.Context) {
-	// sort things need to be added
-	
+	req := model.GetAllBooksRequest{}
+	if err := c.ShouldBindQuery(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"message": apperror.CustomValidationError(err),
+		})
+	}
+
 	// Retrieve all books from the domain
-	books, err := th.domain.GetAllBooks()
+	books, err := th.domain.GetAllBooks(&req)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"message": err.Error(),

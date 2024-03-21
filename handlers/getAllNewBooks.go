@@ -12,7 +12,7 @@ import (
 // get all books handler retrieves all books from a given specific list
 func (th *LibraryHandler) GetAllNewBooksHandler(c *gin.Context) {
 	// sort things need to be added
-	req := model.GetAllNewBooksRequest{}
+	req := model.GetAllBooksRequest{}
 	if err := c.ShouldBindQuery(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"message": apperror.CustomValidationError(err),
@@ -24,7 +24,8 @@ func (th *LibraryHandler) GetAllNewBooksHandler(c *gin.Context) {
 	googleBooks, totalPages, err := th.googleBooksService.GetGoogleBooks(&req)
 	if err != nil {
 		// temp solution
-		books, err := th.domain.GetAllBooks()
+		// todo pagination
+		books, err := th.domain.GetAllBooks(&req)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{
 				"message": err.Error(),

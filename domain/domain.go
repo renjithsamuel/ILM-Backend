@@ -13,14 +13,16 @@ type Service interface {
 	CreateUser(user *model.RegisterUserRequest) error
 	GetUserByEmail(email string) (*model.User, error)
 	GetUserWithBookDetails(userID string) (*model.User, error)
-	GetAllUsers() ([]model.User, error)
+	GetAllUsers(request *model.GetAllUsersRequest) ([]model.User, error)
+	GetAllUsersForSearch(request *model.SearchRequest) ([]model.User, uint, error)
 	UpdateUser(user *model.User, userID string) error
 	UpdateBookDetails(bookDetails *model.BookDetails, userID string) error
 	DeleteUser(userID string) error
 	// book related
 	CreateBook(book *model.CreateBookRequest) error
 	GetBookByISBN(ISBN string) (*model.Book, error)
-	GetAllBooks() ([]model.Book, error)
+	GetAllBooks(request *model.GetAllBooksRequest) ([]model.Book, error)
+	GetAllBooksForSearch(request *model.SearchRequest) ([]model.Book, uint, error)
 	GetAllBooksByBookDetailsFrom(request *model.GetAllBooksByBookDetailsFromRequest) ([]model.Book, error)
 	GetAllBooksFromSpecific(request []string) ([]model.Book, error)
 	CreateBooksBatch(books []*model.CreateBookRequest) error
@@ -29,7 +31,7 @@ type Service interface {
 	CreateCheckoutTicket(ticket *model.CreateCheckoutRequest) error
 	GetCheckoutTicketByID(ticketID string) (*model.CheckoutTicket, error)
 	GetCheckoutsByUserID(bookID, userID string) ([]model.CheckoutTicket, error)
-	GetAllCheckoutTicketsWithDetails() ([]model.CheckoutTicketResponse, error)
+	GetAllCheckoutTicketsWithDetails(request *model.GetAllCheckoutData) ([]model.CheckoutTicketResponse, error)
 	UpdateCheckoutTicket(ticket *model.UpdateCheckoutTicketRequest) error
 	DeleteCheckoutTicket(ticketID string) error
 	// review related
@@ -37,7 +39,7 @@ type Service interface {
 	GetReviewByID(reviewID string) (*model.Review, error)
 	UpdateReview(updateReq *model.UpdateReviewRequest) error
 	DeleteReview(reviewID string) error
-	GetReviewsByBookID(bookID string) ([]model.Review, error)
+	GetReviewsByBookID(bookID string, sortPagination *model.ReviewSort) ([]model.Review, error)
 }
 
 // LibraryService is a concrete service which implements Service

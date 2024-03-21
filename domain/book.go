@@ -3,6 +3,7 @@ package domain
 import (
 	"database/sql"
 	"errors"
+	"fmt"
 	"integrated-library-service/model"
 	"time"
 
@@ -402,7 +403,7 @@ func (l *LibraryService) GetBookWithBookID(bookID string) (*model.Book, error) {
 }
 
 // getAllBooks retrieves all books from the database
-func (l *LibraryService) GetAllBooks() ([]model.Book, error) {
+func (l *LibraryService) GetAllBooks(request *model.GetAllBooksRequest) ([]model.Book, error) {
 	sqlStatement := `
 		SELECT 
 			"ID",
@@ -428,8 +429,49 @@ func (l *LibraryService) GetAllBooks() ([]model.Book, error) {
 			"viewsList",
 			"wishList"
 		FROM 
-			"books";
+			"books"
+		ORDER BY 
+			%s -- orderby
+		%s; -- criteria for limit and offset 
 	`
+	orderBy := `%s ASC`
+
+	if *request.OrderBy == "descending" {
+		orderBy = `%s DESC`
+	}
+
+	switch *request.SortBy {
+	case "title":
+		orderBy = fmt.Sprintf(orderBy, `"title"`)
+	case "author":
+		orderBy = fmt.Sprintf(orderBy, `"author"`)
+	case "isbn":
+		orderBy = fmt.Sprintf(orderBy, `"ISBN"`)
+	case "booksLeft":
+		orderBy = fmt.Sprintf(orderBy, `"booksLeft"`)
+	case "genre":
+		orderBy = fmt.Sprintf(orderBy, `"genre"`)
+	case "publishedDate":
+		orderBy = fmt.Sprintf(orderBy, `"publishedDate"`)
+	case "shelfNumber":
+		orderBy = fmt.Sprintf(orderBy, `"shelfNumber"`)
+	case "rating":
+		orderBy = fmt.Sprintf(orderBy, `"rating"`)
+	case "approximateDemand":
+		orderBy = fmt.Sprintf(orderBy, `"approximateDemand"`)
+	case "wishlistCount":
+		orderBy = fmt.Sprintf(orderBy, `"wishlistCount"`)
+	case "views":
+		orderBy = fmt.Sprintf(orderBy, `"views"`)
+	case "reviewCount":
+		orderBy = fmt.Sprintf(orderBy, `"reviewCount"`)
+	default:
+		orderBy = fmt.Sprintf(orderBy, `"title"`)
+	}
+
+	limitOffset := ` LIMIT %d OFFSET %d`
+	limitOffset = fmt.Sprintf(limitOffset, *request.Limit, (*request.Page-1)*(*request.Limit))
+	sqlStatement = fmt.Sprintf(sqlStatement, orderBy, limitOffset)
 
 	rows, err := l.db.Query(sqlStatement)
 	if err != nil {
@@ -492,6 +534,174 @@ func (l *LibraryService) GetAllBooks() ([]model.Book, error) {
 	}
 
 	return books, nil
+}
+
+// getAllBooks retrieves all books from the database
+func (l *LibraryService) GetAllBooksForSearch(request *model.SearchRequest) ([]model.Book, uint, error) {
+	sqlStatement := `
+		SELECT 
+			"ID",
+			"ISBN",
+			"title",
+			"author",
+			"genre",
+			"publishedDate",
+			"desc",
+			"previewLink",
+			"coverImage",
+			"shelfNumber",
+			"inLibrary",
+			"views",
+			"booksLeft",
+			"wishlistCount",
+			"rating",
+			"reviewCount",
+			"approximateDemand",
+			"createdAt",
+			"updatedAt",
+			"reviewsList",
+			"viewsList",
+			"wishList"
+		FROM 
+			"books"
+		WHERE 
+			%s
+		ORDER BY 
+			%s -- orderby
+		%s; -- criteria for limit and offset 
+	`
+
+	orderBy := `%s ASC`
+
+	if *request.OrderBy == "descending" {
+		orderBy = `%s DESC`
+	}
+
+	switch *request.SortBy {
+	case "title":
+		orderBy = fmt.Sprintf(orderBy, `"title"`)
+	case "author":
+		orderBy = fmt.Sprintf(orderBy, `"author"`)
+	case "isbn":
+		orderBy = fmt.Sprintf(orderBy, `"ISBN"`)
+	case "booksLeft":
+		orderBy = fmt.Sprintf(orderBy, `"booksLeft"`)
+	case "genre":
+		orderBy = fmt.Sprintf(orderBy, `"genre"`)
+	case "publishedDate":
+		orderBy = fmt.Sprintf(orderBy, `"publishedDate"`)
+	case "shelfNumber":
+		orderBy = fmt.Sprintf(orderBy, `"shelfNumber"`)
+	case "rating":
+		orderBy = fmt.Sprintf(orderBy, `"rating"`)
+	case "approximateDemand":
+		orderBy = fmt.Sprintf(orderBy, `"approximateDemand"`)
+	case "wishlistCount":
+		orderBy = fmt.Sprintf(orderBy, `"wishlistCount"`)
+	case "views":
+		orderBy = fmt.Sprintf(orderBy, `"views"`)
+	default:
+		orderBy = fmt.Sprintf(orderBy, `"title"`)
+	}
+
+	searchText := "%" + *request.SearchText + "%"
+	searchBy := `%s`
+	switch *request.SearchBy {
+	case "title":
+		searchBy = fmt.Sprintf(searchBy, `(LOWER(title) LIKE LOWER($1))`)
+	case "author":
+		searchBy = fmt.Sprintf(searchBy, `(LOWER(author) LIKE LOWER($1))`)
+	case "isbn":
+		searchBy = fmt.Sprintf(searchBy, `(LOWER(isbn) LIKE LOWER($1))`)
+	case "genre":
+		searchBy = fmt.Sprintf(searchBy, `(LOWER(genre) LIKE LOWER($1))`)
+	default:
+		searchBy = fmt.Sprintf(searchBy, `(LOWER(title) LIKE LOWER($1) OR LOWER(author) LIKE LOWER($1) OR LOWER(genre) LIKE LOWER($1) OR LOWER(ISBN) LIKE LOWER($1))`)
+	}
+
+	limitOffset := ` LIMIT %d OFFSET %d`
+	limitOffset = fmt.Sprintf(limitOffset, *request.Limit, (*request.Page-1)*(*request.Limit))
+	sqlStatement = fmt.Sprintf(sqlStatement, searchBy, orderBy, limitOffset)
+
+	rows, err := l.db.Query(sqlStatement, searchText)
+	if err != nil {
+		log.Error().Msgf("[Error] GetAllBooks(), db.Query err: %v", err)
+		return nil, 0, err
+	}
+	defer rows.Close()
+
+	var books []model.Book
+	for rows.Next() {
+		var (
+			book       model.Book
+			updatedAt  sql.NullTime
+			reviewList pq.StringArray
+			viewList   pq.StringArray
+			wishList   pq.StringArray
+		)
+		err := rows.Scan(
+			&book.ID,
+			&book.ISBN,
+			&book.Title,
+			&book.Author,
+			&book.Genre,
+			&book.PublishedDate,
+			&book.Description,
+			&book.PreviewLink,
+			&book.CoverImage,
+			&book.ShelfNumber,
+			&book.InLibrary,
+			&book.Views,
+			&book.BooksLeft,
+			&book.WishlistCount,
+			&book.Rating,
+			&book.ReviewCount,
+			&book.ApproximateDemand,
+			&book.CreatedAt,
+			&updatedAt,
+			&reviewList,
+			&viewList,
+			&wishList,
+		)
+		if err != nil {
+			log.Error().Msgf("[Error] GetAllBooksForSearch(), rows.Scan err: %v", err)
+			return nil, 0, err
+		}
+		book.UpdatedAt = &updatedAt.Time
+		book.ReviewsList = reviewList
+		book.ViewsList = viewList
+		book.WishList = wishList
+
+		// get ratings from helper
+		ratings, err := l.getAverageRating(book.ID)
+		if err != nil && errors.Is(err, ErrRatingNotFound) {
+			log.Error().Msgf("[Error] GetAllBooksForSearch(), getAverageRating err: %v", err)
+			return nil, 0, err
+		}
+		book.Rating = float64(*ratings.Rating)
+
+		books = append(books, book)
+	}
+
+	sqlStatementCount := `
+		SELECT 
+			COUNT(*)
+		FROM 
+			"books"
+		WHERE 
+			%s
+	`
+
+	var totalRows uint
+	err = l.db.QueryRow(fmt.Sprintf(sqlStatementCount, searchBy), searchText).Scan(&totalRows)
+	if err != nil {
+		log.Error().Msgf("[Error] GetAllBooksForSearch(), count query err: %v", err)
+		return nil, 0, err
+	}
+	// Calculate total pages
+	totalPages := (uint32(totalRows) + *request.Limit - 1) / *request.Limit
+
+	return books, uint(totalPages), nil
 }
 
 // GetAllBooksFromSpecific retrieves all books from the database for given string arr

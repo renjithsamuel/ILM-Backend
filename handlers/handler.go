@@ -47,6 +47,8 @@ type Handler interface {
 	GetReviewsByBookIDHandler(c *gin.Context)
 	UpdateReviewHandler(c *gin.Context)
 	DeleteReviewHandler(c *gin.Context)
+	// search related
+	SearchHandler(c *gin.Context)
 }
 
 type LibraryHandler struct {
