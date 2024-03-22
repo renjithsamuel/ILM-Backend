@@ -18,10 +18,11 @@ func (th *LibraryHandler) GetAllUsersHandler(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"message": apperror.CustomValidationError(err),
 		})
+		return
 	}
 
 	// Retrieve all users from the domain
-	users, err := th.domain.GetAllUsers(&req)
+	users, totalPages, err := th.domain.GetAllUsers(&req)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"message": err.Error(),
@@ -31,6 +32,7 @@ func (th *LibraryHandler) GetAllUsersHandler(c *gin.Context) {
 
 	// Return the list of users in the response
 	c.JSON(http.StatusOK, gin.H{
-		"users": users,
+		"totalPages": totalPages,
+		"users":      users,
 	})
 }

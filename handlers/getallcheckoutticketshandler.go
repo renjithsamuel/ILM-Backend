@@ -15,9 +15,10 @@ func (th *LibraryHandler) GetAllCheckoutTicketsHandler(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"message": apperror.CustomValidationError(err),
 		})
+		return
 	}
 	// Retrieve all checkout tickets using the domain function
-	checkoutTickets, err := th.domain.GetAllCheckoutTicketsWithDetails(&req)
+	checkoutTickets, totalPages, err := th.domain.GetAllCheckoutTicketsWithDetails(&req)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"message": err.Error(),
@@ -26,6 +27,7 @@ func (th *LibraryHandler) GetAllCheckoutTicketsHandler(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{
+		"totalPages":      totalPages,
 		"checkoutTickets": checkoutTickets,
 	})
 }

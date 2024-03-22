@@ -15,10 +15,11 @@ func (th *LibraryHandler) GetAllBooksHandler(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"message": apperror.CustomValidationError(err),
 		})
+		return
 	}
 
 	// Retrieve all books from the domain
-	books, err := th.domain.GetAllBooks(&req)
+	books, totalPages, err := th.domain.GetAllBooks(&req)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"message": err.Error(),
@@ -28,6 +29,7 @@ func (th *LibraryHandler) GetAllBooksHandler(c *gin.Context) {
 
 	// Return the list of books in the response
 	c.JSON(http.StatusOK, gin.H{
-		"books": books,
+		"totalPages": totalPages,
+		"books":      books,
 	})
 }

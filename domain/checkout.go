@@ -227,7 +227,7 @@ func (l *LibraryService) GetCheckoutsByUserID(bookID, userID string) ([]model.Ch
 }
 
 // GetAllCheckoutTicketsWithDetails retrieves all checkout tickets with associated user and book data
-func (l *LibraryService) GetAllCheckoutTicketsWithDetails(request *model.GetAllCheckoutData) ([]model.CheckoutTicketResponse, error) {
+func (l *LibraryService) GetAllCheckoutTicketsWithDetails(request *model.GetAllCheckoutData) ([]model.CheckoutTicketResponse, uint, error) {
 	sqlStatement := `
 		SELECT 
 			ct."ID",
@@ -286,11 +286,11 @@ func (l *LibraryService) GetAllCheckoutTicketsWithDetails(request *model.GetAllC
 
 	orderBy := `%s ASC`
 
-	if *request.OrderBy == "descending" {
+	if request.OrderBy == "descending" {
 		orderBy = `%s DESC`
 	}
 
-	switch *request.SortBy {
+	switch request.SortBy {
 	case "reservedOn":
 		orderBy = fmt.Sprintf(orderBy, `ct."reservedOn"`)
 	case "checkedoutOn":
@@ -304,13 +304,13 @@ func (l *LibraryService) GetAllCheckoutTicketsWithDetails(request *model.GetAllC
 	}
 
 	limitOffset := ` LIMIT %d OFFSET %d`
-	limitOffset = fmt.Sprintf(limitOffset, *request.Limit, (*request.Page-1)*(*request.Limit))
+	limitOffset = fmt.Sprintf(limitOffset, request.Limit, (request.Page-1)*(request.Limit))
 	sqlStatement = fmt.Sprintf(sqlStatement, orderBy, limitOffset)
 
 	rows, err := l.db.Query(sqlStatement)
 	if err != nil {
 		log.Error().Msgf("[Error] GetAllCheckoutTicketsWithDetails(), db.Query err: %v", err)
-		return nil, err
+		return nil, 0, err
 	}
 	defer rows.Close()
 
@@ -371,7 +371,7 @@ func (l *LibraryService) GetAllCheckoutTicketsWithDetails(request *model.GetAllC
 
 		if err != nil {
 			log.Error().Msgf("[Error] GetAllCheckoutTicketsWithDetails(), rows.Scan err: %v", err)
-			return nil, ErrGetCheckoutTicketsFailed
+			return nil, 0, ErrGetCheckoutTicketsFailed
 		}
 
 		ticket.User = user
@@ -384,7 +384,32 @@ func (l *LibraryService) GetAllCheckoutTicketsWithDetails(request *model.GetAllC
 		tickets = append(tickets, ticket)
 	}
 
-	return tickets, nil
+	sqlStatementCount := `
+	SELECT 
+		COUNT(*)
+	FROM 
+		"checkout_tickets" ct
+	INNER JOIN
+		"users" u ON ct."userID" = u."userID"
+	INNER JOIN
+		"books" b ON ct."bookID" = b."ID"
+	%s; --LIMIT AND OFFSET 
+`
+
+	var totalRows uint
+	err = l.db.QueryRow(fmt.Sprintf(sqlStatementCount, limitOffset)).Scan(&totalRows)
+	// no rows
+	if errors.Is(err, sql.ErrNoRows) {
+		return []model.CheckoutTicketResponse{}, 0, nil
+	}
+	if err != nil {
+		log.Error().Msgf("[Error] GetAllCheckoutTicketsWithDetails(), count query err: %v", err)
+		return nil, 0, err
+	}
+	// Calculate total pages
+	totalPages := (uint32(totalRows) + request.Limit - 1) / request.Limit
+
+	return tickets, uint(totalPages), nil
 }
 
 // UpdateCheckoutTicket updates an existing checkout ticket

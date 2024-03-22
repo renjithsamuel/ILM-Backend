@@ -4,6 +4,7 @@ import (
 	"time"
 )
 
+// RoleType
 type RoleType string
 
 const (
@@ -11,6 +12,7 @@ const (
 	Librarian RoleType = "librarian"
 )
 
+// User
 type User struct {
 	UserID          string      `json:"userID" binding:"required,uuid"`
 	ProfileImageUrl string      `json:"profileImageUrl"`
@@ -31,6 +33,7 @@ type User struct {
 	BookDetails     BookDetails `json:"bookDetails,omitempty" binding:"omitempty"`
 }
 
+// RegisterUserRequest
 type RegisterUserRequest struct {
 	Email           string   `json:"email" binding:"required,email"`
 	ProfileImageUrl string   `json:"profileImageUrl" binding:"omitempty"`
@@ -39,6 +42,7 @@ type RegisterUserRequest struct {
 	Password        string   `json:"password" binding:"required,min=8,max=20,validatepassword"`
 }
 
+// LoginUserRequest
 type LoginUserRequest struct {
 	Email    string `json:"email" binding:"required,email"`
 	Password string `json:"password" binding:"required,min=8,max=20,validatepassword"`
@@ -46,16 +50,16 @@ type LoginUserRequest struct {
 
 // GetAllUsersRequest
 type GetAllUsersRequest struct {
-	Page    *uint32 `json:"page" form:"page" binding:"required,min=1"`
-	Limit   *uint32 `json:"limit" form:"limit" binding:"required,min=5"`
-	SortBy  *string `json:"sortBy" form:"sortBy" binding:"required"`
-	OrderBy *string `json:"orderBy" form:"orderBy" binding:"required"`
+	Page    uint32 `json:"page" form:"page" binding:"required,min=1"`
+	Limit   uint32 `json:"limit" form:"limit" binding:"required,min=5"`
+	SortBy  string `json:"sortBy" form:"sortBy" binding:"required"`
+	OrderBy string `json:"orderBy" form:"orderBy" binding:"required"`
 }
 
 // SortPagination
 type SortPagination struct {
-	Page    *uint32 `json:"page" form:"page" binding:"required,min=1"`
-	Limit   *uint32 `json:"limit" form:"limit" binding:"required,min=5"`
-	SortBy  *string `json:"sortBy" form:"sortBy" binding:"required"`
-	OrderBy *string `json:"orderBy" form:"orderBy" binding:"required"`
+	Page    uint32 `json:"page" form:"page" binding:"required,min=1"`
+	Limit   uint32 `json:"limit" form:"limit" binding:"required,min=5"`
+	SortBy  string `json:"sortBy" form:"sortBy" binding:"required"`
+	OrderBy string `json:"orderBy" form:"orderBy" binding:"required"`
 }

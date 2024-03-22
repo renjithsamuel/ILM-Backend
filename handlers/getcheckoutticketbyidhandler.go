@@ -20,6 +20,7 @@ func (th *LibraryHandler) GetCheckoutTicketByIDHandler(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"message": apperror.CustomValidationError(err),
 		})
+		return
 	}
 
 	// Retrieve the checkout ticket using the domain function

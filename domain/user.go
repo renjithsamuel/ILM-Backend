@@ -243,7 +243,7 @@ func (l *LibraryService) GetUserWithBookDetails(userID string) (*model.User, err
 }
 
 // GetAllUsers retrieves all users from the database
-func (l *LibraryService) GetAllUsers(request *model.GetAllUsersRequest) ([]model.User, error) {
+func (l *LibraryService) GetAllUsers(request *model.GetAllUsersRequest) ([]model.User, uint32, error) {
 	sqlStatement := `
 			SELECT 
 			u."userID",
@@ -282,11 +282,11 @@ func (l *LibraryService) GetAllUsers(request *model.GetAllUsersRequest) ([]model
 	`
 	orderBy := `%s ASC`
 
-	if *request.OrderBy == "descending" {
+	if request.OrderBy == "descending" {
 		orderBy = `%s DESC`
 	}
 
-	switch *request.SortBy {
+	switch request.SortBy {
 	case "name":
 		orderBy = fmt.Sprintf(orderBy, `u."name"`)
 	case "reserved":
@@ -302,13 +302,13 @@ func (l *LibraryService) GetAllUsers(request *model.GetAllUsersRequest) ([]model
 	}
 
 	limitOffset := ` LIMIT %d OFFSET %d`
-	limitOffset = fmt.Sprintf(limitOffset, *request.Limit, (*request.Page-1)*(*request.Limit))
+	limitOffset = fmt.Sprintf(limitOffset, request.Limit, (request.Page-1)*(request.Limit))
 	sqlStatement = fmt.Sprintf(sqlStatement, orderBy, limitOffset)
 
 	rows, err := l.db.Query(sqlStatement)
 	if err != nil {
 		log.Error().Msgf("[Error] GetAllUsers(), db.Query err: %v", err)
-		return nil, err
+		return nil, 0, err
 	}
 	defer rows.Close()
 
@@ -354,7 +354,7 @@ func (l *LibraryService) GetAllUsers(request *model.GetAllUsersRequest) ([]model
 		)
 		if err != nil {
 			log.Error().Msgf("[Error] GetAllUsers(), rows.Scan err: %v", err)
-			return nil, err
+			return nil, 0, err
 		}
 		user.BookDetails.ReservedBookList = reservedBooksList
 		user.BookDetails.PendingBooksList = pendingBooksList
@@ -365,8 +365,29 @@ func (l *LibraryService) GetAllUsers(request *model.GetAllUsersRequest) ([]model
 
 		users = append(users, user)
 	}
+	sqlStatementCount := `
+		SELECT 
+			COUNT(*)
+		FROM 
+			"users" as u INNER JOIN "book_details" as bkd 
+				ON u."userID" = bkd."userID"
+		%s; --LIMIT AND OFFSET 	
+	`
 
-	return users, nil
+	var totalRows uint
+	err = l.db.QueryRow(fmt.Sprintf(sqlStatementCount, limitOffset)).Scan(&totalRows)
+	// no rows
+	if errors.Is(err, sql.ErrNoRows) {
+		return []model.User{}, 0, nil
+	}
+	if err != nil {
+		log.Error().Msgf("[Error] GetAllCheckoutTicketsWithDetails(), count query err: %v", err)
+		return nil, 0, err
+	}
+	// Calculate total pages
+	totalPages := (uint32(totalRows) + request.Limit - 1) / request.Limit
+
+	return users, totalPages, nil
 }
 
 // GetAllUsersForSearch retrieves all users from the database with search params
@@ -411,11 +432,11 @@ func (l *LibraryService) GetAllUsersForSearch(request *model.SearchRequest) ([]m
 	`
 	orderBy := `%s ASC`
 
-	if *request.OrderBy == "descending" {
+	if request.OrderBy == "descending" {
 		orderBy = `%s DESC`
 	}
 
-	switch *request.SortBy {
+	switch request.SortBy {
 	case "name":
 		orderBy = fmt.Sprintf(orderBy, `u."name"`)
 	case "reserved":
@@ -430,9 +451,9 @@ func (l *LibraryService) GetAllUsersForSearch(request *model.SearchRequest) ([]m
 		orderBy = fmt.Sprintf(orderBy, `u."name"`)
 	}
 
-	searchText := "%" + *request.SearchText + "%"
+	searchText := "%" + request.SearchText + "%"
 	searchBy := `%s`
-	switch *request.SearchBy {
+	switch request.SearchBy {
 	case "email":
 		searchBy = fmt.Sprintf(searchBy, `(LOWER(u."email") LIKE LOWER($1))`)
 	case "username":
@@ -442,7 +463,7 @@ func (l *LibraryService) GetAllUsersForSearch(request *model.SearchRequest) ([]m
 	}
 
 	limitOffset := ` LIMIT %d OFFSET %d`
-	limitOffset = fmt.Sprintf(limitOffset, *request.Limit, (*request.Page-1)*(*request.Limit))
+	limitOffset = fmt.Sprintf(limitOffset, request.Limit, (request.Page-1)*(request.Limit))
 	sqlStatement = fmt.Sprintf(sqlStatement, searchBy, orderBy, limitOffset)
 
 	rows, err := l.db.Query(sqlStatement, searchText)
@@ -522,7 +543,7 @@ func (l *LibraryService) GetAllUsersForSearch(request *model.SearchRequest) ([]m
 		return nil, 0, err
 	}
 	// Calculate total pages
-	totalPages := (uint32(totalRows) + *request.Limit - 1) / *request.Limit
+	totalPages := (uint32(totalRows) + request.Limit - 1) / request.Limit
 
 	return users, uint(totalPages), nil
 }

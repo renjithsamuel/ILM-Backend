@@ -12,17 +12,17 @@ import (
 
 // GetGoogleBooks gets required google books
 func (g *GoogleBooksClient) SearchGoogleBooks(request *model.SearchRequest) ([]*model.CreateBookRequest, int, error) {
-	startIndex := ((*request.Page) - 1) * *request.Limit
+	startIndex := ((request.Page) - 1) * (request.Limit)
 
-	searchQuery := *request.SearchText
+	searchQuery := request.SearchText
 
-	switch *request.SearchBy {
+	switch request.SearchBy {
 	case "title":
-		searchQuery = fmt.Sprintf("intitle:%s", *request.SearchText)
+		searchQuery = fmt.Sprintf("intitle:%s", request.SearchText)
 	case "author":
-		searchQuery = fmt.Sprintf("inauthor:%s", *request.SearchText)
+		searchQuery = fmt.Sprintf("inauthor:%s", request.SearchText)
 	case "isbn":
-		searchQuery = fmt.Sprintf("isbn:%s", *request.SearchText)
+		searchQuery = fmt.Sprintf("isbn:%s", request.SearchText)
 	}
 
 	// Construct the URL

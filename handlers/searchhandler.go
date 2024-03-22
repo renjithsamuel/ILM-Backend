@@ -20,7 +20,7 @@ func (th *LibraryHandler) SearchHandler(c *gin.Context) {
 		return
 	}
 
-	if *req.Type == model.SearchRequestTypeBook {
+	if req.Type == model.SearchRequestTypeBook {
 		// get books from google
 		googleBooks, totalPages, err := th.googleBooksService.SearchGoogleBooks(&req)
 		if err != nil {
@@ -67,7 +67,7 @@ func (th *LibraryHandler) SearchHandler(c *gin.Context) {
 		})
 	}
 
-	if *req.Type == model.SearchRequestTypeUser {
+	if req.Type == model.SearchRequestTypeUser {
 		// Retrieve all books from the domain
 		users, totalPages, err := th.domain.GetAllUsersForSearch(&req)
 		if err != nil {

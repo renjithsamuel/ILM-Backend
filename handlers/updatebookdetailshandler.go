@@ -32,6 +32,7 @@ func (th *LibraryHandler) UpdateBookDetailsHandler(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"message": apperror.CustomValidationError(err),
 		})
+		return
 	}
 
 	// update book details operation

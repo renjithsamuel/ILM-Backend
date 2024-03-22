@@ -4,6 +4,7 @@ import (
 	"time"
 )
 
+// BookDetails
 type BookDetails struct {
 	UserID               string     `json:"userID" binding:"omitempty,uuid"`
 	PendingBooksCount    int64      `json:"pendingBooksCount"`

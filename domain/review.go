@@ -121,7 +121,7 @@ func (l *LibraryService) GetReviewByID(reviewID string) (*model.Review, error) {
 }
 
 // GetReviewsByBookID retrieves all reviews for a particular book
-func (l *LibraryService) GetReviewsByBookID(bookID string, request *model.ReviewSort) ([]model.Review, error) {
+func (l *LibraryService) GetReviewsByBookID(bookID string, request *model.ReviewSort) ([]model.Review, uint, error) {
 	sqlStatement := `
 		SELECT 
 			"ID",
@@ -146,7 +146,7 @@ func (l *LibraryService) GetReviewsByBookID(bookID string, request *model.Review
 
 	orderBy := `%s`
 
-	switch *request.SortBy {
+	switch request.SortBy {
 	case "likes":
 		orderBy = fmt.Sprintf(orderBy, `"likes" DESC`)
 	case "newest":
@@ -158,13 +158,13 @@ func (l *LibraryService) GetReviewsByBookID(bookID string, request *model.Review
 	}
 
 	limitOffset := ` LIMIT %d OFFSET %d`
-	limitOffset = fmt.Sprintf(limitOffset, *request.Limit, (*request.Page-1)*(*request.Limit))
+	limitOffset = fmt.Sprintf(limitOffset, request.Limit, (request.Page-1)*(request.Limit))
 	sqlStatement = fmt.Sprintf(sqlStatement, orderBy, limitOffset)
 
 	rows, err := l.db.Query(sqlStatement, bookID)
 	if err != nil {
 		log.Error().Msgf("[Error] GetReviewsByBookID(), db.Query err: %v", err)
-		return nil, ErrGetReviewsFailed
+		return nil, 0, ErrGetReviewsFailed
 	}
 	defer rows.Close()
 
@@ -188,13 +188,36 @@ func (l *LibraryService) GetReviewsByBookID(bookID string, request *model.Review
 		)
 		if err != nil {
 			log.Error().Msgf("[Error] GetReviewsByBookID(), rows.Scan err: %v", err)
-			return nil, ErrGetReviewsFailed
+			return nil, 0, ErrGetReviewsFailed
 		}
 		review.UpdatedAt = &updatedAt.Time
 		reviews = append(reviews, review)
 	}
+	// total pages
+	sqlStatementCount := `
+		SELECT 
+			COUNT(*)
+		FROM 
+			"reviews"
+		WHERE 
+			"bookID" = $1
+		%s; --LIMIT AND OFFSET 
+	`
 
-	return reviews, nil
+	var totalRows uint
+	err = l.db.QueryRow(fmt.Sprintf(sqlStatementCount, limitOffset), bookID).Scan(&totalRows)
+	// no rows
+	if errors.Is(err, sql.ErrNoRows) {
+		return []model.Review{}, 0, nil
+	}
+	if err != nil {
+		log.Error().Msgf("[Error] GetReviewsByBookID(), count query err: %v", err)
+		return nil, 0, err
+	}
+	// Calculate total pages
+	totalPages := (uint32(totalRows) + request.Limit - 1) / request.Limit
+
+	return reviews, uint(totalPages), nil
 }
 
 // GetAllReviews retrieves all reviews

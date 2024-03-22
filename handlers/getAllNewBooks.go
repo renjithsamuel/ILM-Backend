@@ -24,8 +24,7 @@ func (th *LibraryHandler) GetAllNewBooksHandler(c *gin.Context) {
 	googleBooks, totalPages, err := th.googleBooksService.GetGoogleBooks(&req)
 	if err != nil {
 		// temp solution
-		// todo pagination
-		books, err := th.domain.GetAllBooks(&req)
+		books, totalPages, err := th.domain.GetAllBooks(&req)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{
 				"message": err.Error(),
@@ -33,7 +32,7 @@ func (th *LibraryHandler) GetAllNewBooksHandler(c *gin.Context) {
 			return
 		}
 		c.JSON(http.StatusOK, gin.H{
-			"totalPages": -1,
+			"totalPages": totalPages,
 			"books":      books,
 		})
 		return

@@ -55,31 +55,10 @@ func (l *LibraryService) CreateBook(book *model.CreateBookRequest) error {
 			$1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19
 		) 
 		ON CONFLICT("ISBN") 
-		DO UPDATE SET
-			"title" = EXCLUDED."title",
-			"author" = EXCLUDED."author",
-			"genre" = EXCLUDED."genre",
-			"publishedDate" = EXCLUDED."publishedDate",
-			"desc" = EXCLUDED."desc",
-			"previewLink" = EXCLUDED."previewLink",
-			"coverImage" = EXCLUDED."coverImage",
-			"shelfNumber" = EXCLUDED."shelfNumber",
-			"inLibrary" = EXCLUDED."inLibrary",
-			"views" = EXCLUDED."views",
-			"booksLeft" = EXCLUDED."booksLeft",
-			"wishlistCount" = EXCLUDED."wishlistCount",
-			"rating" = EXCLUDED."rating",
-			"reviewCount" = EXCLUDED."reviewCount",
-			"approximateDemand" = EXCLUDED."approximateDemand",
-			"reviewsList" = EXCLUDED."reviewsList",
-			"viewsList" = EXCLUDED."viewsList",
-			"wishList" = EXCLUDED."wishList",
-			"updatedAt" = NOW()
-		RETURNING "ID";
+		DO NOTHING;
 	`
 
-	var bookID string
-	err := l.db.QueryRow(
+	_, err := l.db.Exec(
 		sqlStatement,
 		book.ISBN,
 		book.Title,
@@ -100,7 +79,7 @@ func (l *LibraryService) CreateBook(book *model.CreateBookRequest) error {
 		pq.Array(book.ReviewsList),
 		pq.Array(book.ViewsList),
 		pq.Array(book.WishList),
-	).Scan(&bookID)
+	)
 
 	if err != nil {
 		log.Error().Msgf("[Error] CreateBook(), db.QueryRow err: %v", err)
@@ -152,27 +131,7 @@ func (l *LibraryService) CreateBooksBatch(books []*model.CreateBookRequest) erro
 			$1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19
 		) 
 		ON CONFLICT("ISBN") 
-		DO UPDATE SET
-			"title" = EXCLUDED."title",
-			"author" = EXCLUDED."author",
-			"genre" = EXCLUDED."genre",
-			"publishedDate" = EXCLUDED."publishedDate",
-			"desc" = EXCLUDED."desc",
-			"previewLink" = EXCLUDED."previewLink",
-			"coverImage" = EXCLUDED."coverImage",
-			"shelfNumber" = EXCLUDED."shelfNumber",
-			"inLibrary" = EXCLUDED."inLibrary",
-			"views" = EXCLUDED."views",
-			"booksLeft" = EXCLUDED."booksLeft",
-			"wishlistCount" = EXCLUDED."wishlistCount",
-			"rating" = EXCLUDED."rating",
-			"reviewCount" = EXCLUDED."reviewCount",
-			"approximateDemand" = EXCLUDED."approximateDemand",
-			"reviewsList" = EXCLUDED."reviewsList",
-			"viewsList" = EXCLUDED."viewsList",
-			"wishList" = EXCLUDED."wishList",
-			"updatedAt" = NOW()
-		RETURNING "ID";
+		DO NOTHING;
 	`
 
 	stmt, err := tx.Prepare(sqlStatement)
@@ -184,8 +143,7 @@ func (l *LibraryService) CreateBooksBatch(books []*model.CreateBookRequest) erro
 	defer stmt.Close()
 
 	for _, book := range books {
-		var bookID string
-		err := stmt.QueryRow(
+		_, err := stmt.Exec(
 			book.ISBN,
 			book.Title,
 			book.Author,
@@ -205,7 +163,7 @@ func (l *LibraryService) CreateBooksBatch(books []*model.CreateBookRequest) erro
 			pq.Array(book.ReviewsList),
 			pq.Array(book.ViewsList),
 			pq.Array(book.WishList),
-		).Scan(&bookID)
+		)
 
 		if err != nil {
 			log.Error().Msgf("[Error] CreateBooksBatch(), stmt.QueryRow err: %v", err)
@@ -403,7 +361,7 @@ func (l *LibraryService) GetBookWithBookID(bookID string) (*model.Book, error) {
 }
 
 // getAllBooks retrieves all books from the database
-func (l *LibraryService) GetAllBooks(request *model.GetAllBooksRequest) ([]model.Book, error) {
+func (l *LibraryService) GetAllBooks(request *model.GetAllBooksRequest) ([]model.Book, uint, error) {
 	sqlStatement := `
 		SELECT 
 			"ID",
@@ -436,11 +394,11 @@ func (l *LibraryService) GetAllBooks(request *model.GetAllBooksRequest) ([]model
 	`
 	orderBy := `%s ASC`
 
-	if *request.OrderBy == "descending" {
+	if request.OrderBy == "descending" {
 		orderBy = `%s DESC`
 	}
 
-	switch *request.SortBy {
+	switch request.SortBy {
 	case "title":
 		orderBy = fmt.Sprintf(orderBy, `"title"`)
 	case "author":
@@ -470,13 +428,13 @@ func (l *LibraryService) GetAllBooks(request *model.GetAllBooksRequest) ([]model
 	}
 
 	limitOffset := ` LIMIT %d OFFSET %d`
-	limitOffset = fmt.Sprintf(limitOffset, *request.Limit, (*request.Page-1)*(*request.Limit))
+	limitOffset = fmt.Sprintf(limitOffset, request.Limit, (request.Page-1)*(request.Limit))
 	sqlStatement = fmt.Sprintf(sqlStatement, orderBy, limitOffset)
 
 	rows, err := l.db.Query(sqlStatement)
 	if err != nil {
 		log.Error().Msgf("[Error] GetAllBooks(), db.Query err: %v", err)
-		return nil, err
+		return nil, 0, err
 	}
 	defer rows.Close()
 
@@ -515,7 +473,7 @@ func (l *LibraryService) GetAllBooks(request *model.GetAllBooksRequest) ([]model
 		)
 		if err != nil {
 			log.Error().Msgf("[Error] GetAllBooks(), rows.Scan err: %v", err)
-			return nil, err
+			return nil, 0, err
 		}
 		book.UpdatedAt = &updatedAt.Time
 		book.ReviewsList = reviewList
@@ -526,14 +484,31 @@ func (l *LibraryService) GetAllBooks(request *model.GetAllBooksRequest) ([]model
 		ratings, err := l.getAverageRating(book.ID)
 		if err != nil && errors.Is(err, ErrRatingNotFound) {
 			log.Error().Msgf("[Error] GetAllBooks(), getAverageRating err: %v", err)
-			return nil, err
+			return nil, 0, err
 		}
 		book.Rating = float64(*ratings.Rating)
 
 		books = append(books, book)
 	}
 
-	return books, nil
+	sqlStatementCount := `
+		SELECT 
+			COUNT(*)
+		FROM 
+			"books"
+		%s; --LIMIT AND OFFSET 
+	`
+
+	var totalRows uint
+	err = l.db.QueryRow(fmt.Sprintf(sqlStatementCount, limitOffset)).Scan(&totalRows)
+	if err != nil {
+		log.Error().Msgf("[Error] GetAllBooksForSearch(), count query err: %v", err)
+		return nil, 0, err
+	}
+	// Calculate total pages
+	totalPages := (uint32(totalRows) + request.Limit - 1) / request.Limit
+
+	return books, uint(totalPages), nil
 }
 
 // getAllBooks retrieves all books from the database
@@ -573,11 +548,11 @@ func (l *LibraryService) GetAllBooksForSearch(request *model.SearchRequest) ([]m
 
 	orderBy := `%s ASC`
 
-	if *request.OrderBy == "descending" {
+	if request.OrderBy == "descending" {
 		orderBy = `%s DESC`
 	}
 
-	switch *request.SortBy {
+	switch request.SortBy {
 	case "title":
 		orderBy = fmt.Sprintf(orderBy, `"title"`)
 	case "author":
@@ -604,9 +579,9 @@ func (l *LibraryService) GetAllBooksForSearch(request *model.SearchRequest) ([]m
 		orderBy = fmt.Sprintf(orderBy, `"title"`)
 	}
 
-	searchText := "%" + *request.SearchText + "%"
+	searchText := "%" + request.SearchText + "%"
 	searchBy := `%s`
-	switch *request.SearchBy {
+	switch request.SearchBy {
 	case "title":
 		searchBy = fmt.Sprintf(searchBy, `(LOWER(title) LIKE LOWER($1))`)
 	case "author":
@@ -620,7 +595,7 @@ func (l *LibraryService) GetAllBooksForSearch(request *model.SearchRequest) ([]m
 	}
 
 	limitOffset := ` LIMIT %d OFFSET %d`
-	limitOffset = fmt.Sprintf(limitOffset, *request.Limit, (*request.Page-1)*(*request.Limit))
+	limitOffset = fmt.Sprintf(limitOffset, request.Limit, (request.Page-1)*(request.Limit))
 	sqlStatement = fmt.Sprintf(sqlStatement, searchBy, orderBy, limitOffset)
 
 	rows, err := l.db.Query(sqlStatement, searchText)
@@ -694,12 +669,16 @@ func (l *LibraryService) GetAllBooksForSearch(request *model.SearchRequest) ([]m
 
 	var totalRows uint
 	err = l.db.QueryRow(fmt.Sprintf(sqlStatementCount, searchBy), searchText).Scan(&totalRows)
+	// no rows
+	if errors.Is(err, sql.ErrNoRows) {
+		return []model.Book{}, 0, nil
+	}
 	if err != nil {
 		log.Error().Msgf("[Error] GetAllBooksForSearch(), count query err: %v", err)
 		return nil, 0, err
 	}
 	// Calculate total pages
-	totalPages := (uint32(totalRows) + *request.Limit - 1) / *request.Limit
+	totalPages := (uint32(totalRows) + request.Limit - 1) / request.Limit
 
 	return books, uint(totalPages), nil
 }
@@ -833,6 +812,8 @@ func (l *LibraryService) GetAllBooksByBookDetailsFrom(request *model.GetAllBooks
 		bookList = pendingBooksList
 	case model.BookDetailsFromCheckedOut:
 		bookList = checkedOutBookList
+	case model.BookDetailsFromCompleted:
+		bookList = completedBooksList
 	case model.BookDetailsFromWishLists:
 		bookList = wishlistBooks
 	default:

@@ -2,15 +2,16 @@ package model
 
 // GetAllBooksRequest
 type SearchRequest struct {
-	Page       *uint32            `json:"page" form:"page" binding:"required,min=1"`
-	Limit      *uint32            `json:"limit" form:"limit" binding:"required,min=5"`
-	SortBy     *string            `json:"sortBy" form:"sortBy" binding:"required"`
-	OrderBy    *string            `json:"orderBy" form:"orderBy" binding:"required"`
-	SearchText *string            `json:"searchText" form:"searchText" binding:"required"`
-	SearchBy   *string            `json:"searchBy" form:"searchBy" binding:"required"`
-	Type       *SearchRequestType `json:"type" form:"type" binding:"required,oneof=user book checkout review"`
+	Page       uint32            `json:"page" form:"page" binding:"required,min=1"`
+	Limit      uint32            `json:"limit" form:"limit" binding:"required,min=5"`
+	SortBy     string            `json:"sortBy" form:"sortBy" binding:"required"`
+	OrderBy    string            `json:"orderBy" form:"orderBy" binding:"required"`
+	SearchBy   string            `json:"searchBy" form:"searchBy" binding:"required"`
+	Type       SearchRequestType `json:"type" form:"type" binding:"required,oneof=user book checkout review"`
+	SearchText string           `json:"searchText" form:"searchText" binding:"omitempty"`
 }
 
+// SearchRequestType
 type SearchRequestType string
 
 var (

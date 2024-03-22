@@ -10,7 +10,6 @@ import (
 
 // GetReviewsByBookIDHandler retrieves all reviews for a particular book
 func (th *LibraryHandler) GetReviewsByBookIDHandler(c *gin.Context) {
-	// todo pagination
 	req := struct {
 		BookID string `json:"bookID" uri:"bookid" binding:"required,uuid"`
 	}{}
@@ -23,13 +22,14 @@ func (th *LibraryHandler) GetReviewsByBookIDHandler(c *gin.Context) {
 	}
 
 	reqPagination := model.ReviewSort{}
-	if err := c.ShouldBindJSON(&req); err != nil {
+	if err := c.ShouldBindQuery(&reqPagination); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"message": apperror.CustomValidationError(err),
 		})
+		return
 	}
 
-	reviews, err := th.domain.GetReviewsByBookID(req.BookID, &reqPagination)
+	reviews, totalPages, err := th.domain.GetReviewsByBookID(req.BookID, &reqPagination)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"message": err.Error(),
@@ -38,6 +38,7 @@ func (th *LibraryHandler) GetReviewsByBookIDHandler(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"reviews": reviews,
+		"totalPages": totalPages,
+		"reviews":    reviews,
 	})
 }

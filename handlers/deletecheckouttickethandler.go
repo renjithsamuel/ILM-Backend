@@ -18,6 +18,7 @@ func (th *LibraryHandler) DeleteCheckoutTicketHandler(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"message": apperror.CustomValidationError(err),
 		})
+		return
 	}
 
 	// Delete the checkout ticket using the domain function

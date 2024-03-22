@@ -24,7 +24,7 @@ func (g *GoogleBooksClient) GetGoogleBooks(request *model.GetAllBooksRequest) ([
 	// 	log.Error().Msgf("marshal error : %v ", err)
 	// 	return nil, &CustomerAccountCreateResponse{Response: ErrorResponse(err, false)}
 	// }
-	startIndex := ((*request.Page) - 1) * *request.Limit
+	startIndex := ((request.Page) - 1) * (request.Limit)
 	url := fmt.Sprintf("/v1/volumes?q=orderBy=%v&startIndex=%v&maxResults=%v&key=%v", "newest", startIndex, request.Limit, g.apiKey)
 	req, err := http.NewRequest(http.MethodGet, url, nil)
 	if err != nil {

@@ -36,12 +36,14 @@ type CheckoutTicketResponse struct {
 	User `json:"user"`
 }
 
+// CreateCheckoutRequest
 type CreateCheckoutRequest struct {
 	BookID       string    `json:"bookID" binding:"required"`
 	UserID       string    `json:"userID" binding:"required"`
 	NumberOfDays int64     `json:"numberOfDays"`
 }
 
+// UpdateCheckoutTicketRequest
 type UpdateCheckoutTicketRequest struct {
 	ID           string    `json:"ID" binding:"required"`
 	BookID       string    `json:"bookID" binding:"required"`

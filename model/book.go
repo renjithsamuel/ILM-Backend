@@ -4,6 +4,7 @@ import (
 	"time"
 )
 
+// Book
 type Book struct {
 	ID            string    `json:"ID" binding:"required,uuid"`
 	ISBN          string    `json:"ISBN" binding:"required"`
@@ -31,6 +32,7 @@ type Book struct {
 	UpdatedAt         *time.Time `json:"updatedAt"`
 }
 
+// CreateBookRequest
 type CreateBookRequest struct {
 	ISBN          string    `json:"ISBN" binding:"required"`
 	Title         string    `json:"title" binding:"required"`
@@ -55,18 +57,25 @@ type CreateBookRequest struct {
 	ApproximateDemand *int64   `json:"approximateDemand" binding:"omitempty"`
 }
 
+// GetBookByISBNRequest
 type GetBookByISBNRequest struct {
 	ISBN string `json:"isbn" uri:"isbn" binding:"required"`
 }
 
+// BookDetailsFrom
 type BookDetailsFrom string
 
 var (
-	BookDetailsFromReserved   BookDetailsFrom = "reserved"
-	BookDetailsFromPending    BookDetailsFrom = "pending"
-	BookDetailsFromCheckedOut BookDetailsFrom = "checkedOut"
-	BookDetailsFromWishLists  BookDetailsFrom = "wishLists"
-	BookDetailsFromCompleted  BookDetailsFrom = "completed"
+	// BookDetailsFromReserved
+	BookDetailsFromReserved BookDetailsFrom = "reserved"
+	// BookDetailsFromPending
+	BookDetailsFromPending BookDetailsFrom = "pending"
+	// BookDetailsFromCheckedOut
+	BookDetailsFromCheckedOut BookDetailsFrom = "checkedout"
+	// BookDetailsFromWishLists
+	BookDetailsFromWishLists BookDetailsFrom = "wishlists"
+	// BookDetailsFromCompleted
+	BookDetailsFromCompleted BookDetailsFrom = "completed"
 )
 
 type GetAllBooksByBookDetailsFromRequest struct {
@@ -100,16 +109,16 @@ type UpdateBookRequest struct {
 
 // GetAllBooksRequest
 type GetAllBooksRequest struct {
-	Page    *uint32 `json:"page" form:"page" binding:"required,min=1"`
-	Limit   *uint32 `json:"limit" form:"limit" binding:"required,min=5"`
-	SortBy  *string `json:"sortBy" form:"sortBy" binding:"required"`
-	OrderBy *string `json:"orderBy" form:"orderBy" binding:"required"`
+	Page    uint32 `json:"page" form:"page" binding:"required,min=1"`
+	Limit   uint32 `json:"limit" form:"limit" binding:"required,min=5"`
+	SortBy  string `json:"sortBy" form:"sortBy" binding:"required"`
+	OrderBy string `json:"orderBy" form:"orderBy" binding:"required"`
 }
 
 // GetAllCheckoutData
 type GetAllCheckoutData struct {
-	Page    *uint32 `json:"page" form:"page" binding:"required,min=1"`
-	Limit   *uint32 `json:"limit" form:"limit" binding:"required,min=5"`
-	SortBy  *string `json:"sortBy" form:"sortBy" binding:"required"`
-	OrderBy *string `json:"orderBy" form:"orderBy" binding:"required"`
+	Page    uint32 `json:"page" form:"page" binding:"required,min=1"`
+	Limit   uint32 `json:"limit" form:"limit" binding:"required,min=5"`
+	SortBy  string `json:"sortBy" form:"sortBy" binding:"required"`
+	OrderBy string `json:"orderBy" form:"orderBy" binding:"required"`
 }
