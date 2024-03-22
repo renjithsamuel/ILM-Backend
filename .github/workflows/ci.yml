@@ -25,7 +25,7 @@ jobs:
         run: go build
 
       - name: Lint with golangci-lint
-        run: ./bin/golangci-lint -c .golangci.yml run .
+        run: golangci-lint -c .golangci.yml run .
 
       - name: Run semgrep
         run: semgrep --config=p/p
