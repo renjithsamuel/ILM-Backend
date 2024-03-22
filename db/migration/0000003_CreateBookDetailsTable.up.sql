@@ -10,7 +10,7 @@ CREATE TABLE IF NOT EXISTS "book_details" (
     "pendingBooksList" VARCHAR[] NOT NULL DEFAULT '{}',
     "completedBooksCount" NUMERIC NOT NULL DEFAULT 0,
     "completedBooksList" VARCHAR[] NOT NULL DEFAULT '{}',
-    "favoriteGenres" BOOKGENRE_TYPE[] NOT NULL DEFAULT '{}',
+    "favoriteGenres" VARCHAR[] NOT NULL DEFAULT '{}',
     "wishlistBooks" VARCHAR[] NOT NULL DEFAULT '{}',
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT NOW(),
     "updatedAt" TIMESTAMP(3),
