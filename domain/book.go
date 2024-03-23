@@ -588,7 +588,7 @@ func (l *LibraryService) GetAllBooksForSearch(request *model.SearchRequest) ([]m
 		searchBy = fmt.Sprintf(searchBy, `(LOWER(author) LIKE LOWER($1))`)
 	case "isbn":
 		searchBy = fmt.Sprintf(searchBy, `(LOWER(isbn) LIKE LOWER($1))`)
-	case "genre":
+	case "genre", "subject":
 		searchBy = fmt.Sprintf(searchBy, `(LOWER(genre) LIKE LOWER($1))`)
 	default:
 		searchBy = fmt.Sprintf(searchBy, `(LOWER(title) LIKE LOWER($1) OR LOWER(author) LIKE LOWER($1) OR LOWER(genre) LIKE LOWER($1) OR LOWER(ISBN) LIKE LOWER($1))`)

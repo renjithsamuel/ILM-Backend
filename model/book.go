@@ -122,3 +122,8 @@ type GetAllCheckoutData struct {
 	SortBy  string `json:"sortBy" form:"sortBy" binding:"required"`
 	OrderBy string `json:"orderBy" form:"orderBy" binding:"required"`
 }
+
+// similar books request
+type SimilarBooksRequest struct {
+	ISBN string `json:"isbn" uri:"isbn" binding:"required"`
+}

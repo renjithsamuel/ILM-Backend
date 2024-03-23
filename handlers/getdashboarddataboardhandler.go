@@ -17,6 +17,6 @@ func (th *LibraryHandler) GetDashboardDataBoardHandler(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"dashboardData": dashboardData,
+		"boardData": dashboardData,
 	})
 }

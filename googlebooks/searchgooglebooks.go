@@ -23,6 +23,8 @@ func (g *GoogleBooksClient) SearchGoogleBooks(request *model.SearchRequest) ([]*
 		searchQuery = fmt.Sprintf("inauthor:%s", request.SearchText)
 	case "isbn":
 		searchQuery = fmt.Sprintf("isbn:%s", request.SearchText)
+	case "subject": // used for similar books and nowhere else
+		searchQuery = fmt.Sprintf("subject:%s", request.SearchText)
 	}
 
 	// Construct the URL

@@ -53,6 +53,8 @@ type Handler interface {
 	GetDashboardLineGraphDataHandler(c *gin.Context)
 	GetDashboardDataBoardHandler(c *gin.Context)
 	GetHighDemandBooksHandler(c *gin.Context)
+	// similar books
+	SimilarBooksHandler(c *gin.Context)
 }
 
 type LibraryHandler struct {

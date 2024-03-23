@@ -255,6 +255,15 @@ func NewRoutes(libraryHandler *handlers.LibraryHandler) Routes {
 			ProtectedRoute: true,
 			HandlerFunc:    libraryHandler.GetHighDemandBooksHandler,
 		},
+		// similar books
+		Route{
+			Name:           "Similar books",
+			Method:         http.MethodGet,
+			Pattern:        "/similarbooks/:isbn",
+			ProtectedRoute: true,
+			HandlerFunc:    libraryHandler.SimilarBooksHandler,
+		},
+		// todo books added in dashboard should be on date on which its added to library
 		// ml - related
 	}
 }
