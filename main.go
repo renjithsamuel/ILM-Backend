@@ -5,8 +5,6 @@ import (
 	"flag"
 	"fmt"
 
-	"github.com/joho/godotenv"
-
 	"log"
 	"os"
 	"os/signal"
@@ -49,9 +47,9 @@ var (
 
 func init() {
 	// Getting secret key
-	if err := godotenv.Load(); err != nil {
-		panic(err)
-	}
+	// if err := godotenv.Load(); err != nil {
+	// 	panic(err)
+	// }
 	secretKey = os.Getenv("JWT_SECRET_KEY")
 	googleAPIKey = os.Getenv("GOOGLE_BOOKS_API_KEY")
 	googleAPIBaseUrl = os.Getenv("GOOGLE_BOOKS_BASE_URL")
