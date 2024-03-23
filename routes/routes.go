@@ -233,6 +233,29 @@ func NewRoutes(libraryHandler *handlers.LibraryHandler) Routes {
 			ProtectedRoute: true,
 			HandlerFunc:    libraryHandler.SearchHandler,
 		},
+		// dashboard related
+		Route{
+			Name:           "Dashboard line graph data",
+			Method:         http.MethodGet,
+			Pattern:        "/dashboards/linegraph",
+			ProtectedRoute: true,
+			HandlerFunc:    libraryHandler.GetDashboardLineGraphDataHandler,
+		},
+		Route{
+			Name:           "Dashboard data board",
+			Method:         http.MethodGet,
+			Pattern:        "/dashboards/databoard",
+			ProtectedRoute: true,
+			HandlerFunc:    libraryHandler.GetDashboardDataBoardHandler,
+		},
+		Route{
+			Name:           "High demand books",
+			Method:         http.MethodGet,
+			Pattern:        "/dashboards/highdemand",
+			ProtectedRoute: true,
+			HandlerFunc:    libraryHandler.GetHighDemandBooksHandler,
+		},
+		// ml - related
 	}
 }
 
