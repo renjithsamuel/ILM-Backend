@@ -5,8 +5,6 @@ import (
 	"flag"
 	"fmt"
 
-	"github.com/joho/godotenv"
-
 	"log"
 	"os"
 	"os/signal"
@@ -19,6 +17,7 @@ import (
 	"integrated-library-service/routes"
 
 	"github.com/gin-gonic/gin"
+	"github.com/joho/godotenv"
 
 	_ "github.com/lib/pq" // pq driver.
 )
@@ -48,7 +47,8 @@ var (
 )
 
 func init() {
-	// Getting secret key
+	// Getting secret key 
+	// todo remember to remove this before merge
 	if err := godotenv.Load(); err != nil {
 		panic(err)
 	}
