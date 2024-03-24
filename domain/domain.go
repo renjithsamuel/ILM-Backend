@@ -44,6 +44,8 @@ type Service interface {
 	GetDashboardLineGraphData() ([]model.DashboardLineGraphData, error)
 	GetDashboardDataBoard() (*model.DashboardDataBoard, error)
 	GetHighDemandBooks() (*model.HighDemandBooks, error)
+	// dataanalysis related
+	GetBooksByApproximateDemand(request *model.GetBooksByApproximateDemandRequest) ([]model.Book, uint, error)
 }
 
 // LibraryService is a concrete service which implements Service

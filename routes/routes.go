@@ -264,7 +264,21 @@ func NewRoutes(libraryHandler *handlers.LibraryHandler) Routes {
 			HandlerFunc:    libraryHandler.SimilarBooksHandler,
 		},
 		// todo books added in dashboard should be on date on which its added to library
-		// ml - related
+		// dataanalysis - related
+		Route{
+			Name:           "Get Approximate Demand Books",
+			Method:         http.MethodGet,
+			Pattern:        "/dataanalysis/approximatedemand",
+			ProtectedRoute: true,
+			HandlerFunc:    libraryHandler.GetApproximateDemandHandler,
+		},
+		Route{
+			Name:           "Get Recommended Books For User",
+			Method:         http.MethodGet,
+			Pattern:        "/dataanalysis/recommendedbooks",
+			ProtectedRoute: true,
+			HandlerFunc:    libraryHandler.GetRecommendedBooksForUserHandler,
+		},
 	}
 }
 

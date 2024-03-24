@@ -80,3 +80,16 @@ func (r *LibraryService) getAverageRating(bookID string) (*model.GetAverageRatin
 		RatingEntity: ratingEntity,
 	}, nil
 }
+
+// Function to calculate the demand score for a book
+func (l *LibraryService) calculateDemandScore(book model.Book) int64 {
+	// Calculate points for each factor
+	ratingPoints := int(book.Rating * model.RatingWeight)
+	reviewPoints := len(book.ReviewsList) * model.ReviewWeight
+	viewPoints := int(book.Views * model.ViewWeight)
+	wishlistPoints := int(book.WishlistCount * model.WishlistWeight)
+
+	// Calculate cumulative demand score
+	demandScore := ratingPoints + reviewPoints + viewPoints + wishlistPoints
+	return int64(demandScore)
+}

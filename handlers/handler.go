@@ -55,6 +55,8 @@ type Handler interface {
 	GetHighDemandBooksHandler(c *gin.Context)
 	// similar books
 	SimilarBooksHandler(c *gin.Context)
+	// data analysis related
+	GetApproximateDemandHandler(c *gin.Context)
 }
 
 type LibraryHandler struct {
