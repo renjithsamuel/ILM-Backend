@@ -26,7 +26,7 @@ func (th *LibraryHandler) UpdateBookDetailsHandler(c *gin.Context) {
 		})
 		return
 	}
-	
+
 	req := model.BookDetails{}
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{

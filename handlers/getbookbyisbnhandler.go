@@ -2,12 +2,12 @@ package handlers
 
 import (
 	"net/http"
-	
+
 	"github.com/gin-gonic/gin"
 
 	"integrated-library-service/apperror"
-	"integrated-library-service/model"
 	"integrated-library-service/domain"
+	"integrated-library-service/model"
 )
 
 // get book by ISBN handler retrieves a book by its ISBN

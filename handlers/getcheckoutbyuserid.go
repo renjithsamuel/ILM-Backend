@@ -33,7 +33,7 @@ func (th *LibraryHandler) GetCheckoutsByUserIDHandler(c *gin.Context) {
 				"checkoutTickets": []model.CheckoutTicket{},
 			})
 			return
-		}	
+		}
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"message": err.Error(),
 		})

@@ -18,7 +18,7 @@ type CheckoutTicket struct {
 	UpdatedAt    time.Time `json:"updatedAt"`
 }
 
-// CheckoutTicketResponse 
+// CheckoutTicketResponse
 type CheckoutTicketResponse struct {
 	ID           string    `json:"ID"`
 	BookID       string    `json:"bookID" binding:"required"`
@@ -32,15 +32,15 @@ type CheckoutTicketResponse struct {
 	ReturnedDate time.Time `json:"returnedDate"`
 	CreatedAt    time.Time `json:"createdAt"`
 	UpdatedAt    time.Time `json:"updatedAt"`
-	Book `json:"book"`
-	User `json:"user"`
+	Book         `json:"book"`
+	User         `json:"user"`
 }
 
 // CreateCheckoutRequest
 type CreateCheckoutRequest struct {
-	BookID       string    `json:"bookID" binding:"required"`
-	UserID       string    `json:"userID" binding:"required"`
-	NumberOfDays int64     `json:"numberOfDays"`
+	BookID       string `json:"bookID" binding:"required"`
+	UserID       string `json:"userID" binding:"required"`
+	NumberOfDays int64  `json:"numberOfDays"`
 }
 
 // UpdateCheckoutTicketRequest

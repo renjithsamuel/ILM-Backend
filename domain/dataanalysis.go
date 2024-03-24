@@ -70,7 +70,7 @@ func (l *LibraryService) GetBooksByApproximateDemand(request *model.GetBooksByAp
 			log.Error().Msgf("[Error] UpdateApproximateDemand(), getAverageRating err: %v", err)
 			return nil, 0, nil
 		}
-		book.Rating = float64(*ratings.Rating)
+		book.Rating = *ratings.Rating
 
 		// Calculate demand score
 		demandScore := l.calculateDemandScore(book)

@@ -47,7 +47,7 @@ var (
 )
 
 func init() {
-	// Getting secret key 
+	// Getting secret key
 	// todo remember to remove this before merge
 	if err := godotenv.Load(); err != nil {
 		panic(err)

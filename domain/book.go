@@ -102,7 +102,10 @@ func (l *LibraryService) CreateBooksBatch(books []*model.CreateBookRequest) erro
 	}
 	defer func() {
 		if r := recover(); r != nil {
-			tx.Rollback()
+			if err := tx.Rollback(); err != nil {
+				log.Error().Msgf("[Error] CreateBooksBatch(), db.Begin err: %v", err)
+				return
+			}
 		}
 	}()
 
@@ -137,7 +140,10 @@ func (l *LibraryService) CreateBooksBatch(books []*model.CreateBookRequest) erro
 	stmt, err := tx.Prepare(sqlStatement)
 	if err != nil {
 		log.Error().Msgf("[Error] CreateBooksBatch(), tx.Prepare err: %v", err)
-		tx.Rollback()
+		if err := tx.Rollback(); err != nil {
+			log.Error().Msgf("[Error] CreateBooksBatch(), db.Begin err: %v", err)
+			return ErrFailedCreateBook
+		}
 		return ErrFailedCreateBook
 	}
 	defer stmt.Close()
@@ -167,7 +173,10 @@ func (l *LibraryService) CreateBooksBatch(books []*model.CreateBookRequest) erro
 
 		if err != nil {
 			log.Error().Msgf("[Error] CreateBooksBatch(), stmt.QueryRow err: %v", err)
-			tx.Rollback()
+			if err := tx.Rollback(); err != nil {
+				log.Error().Msgf("[Error] CreateBooksBatch(), db.Begin err: %v", err)
+				return ErrFailedCreateBook
+			}
 			return ErrFailedCreateBook
 		}
 	}
@@ -175,7 +184,10 @@ func (l *LibraryService) CreateBooksBatch(books []*model.CreateBookRequest) erro
 	err = tx.Commit()
 	if err != nil {
 		log.Error().Msgf("[Error] CreateBooksBatch(), tx.Commit err: %v", err)
-		tx.Rollback()
+		if err := tx.Rollback(); err != nil {
+			log.Error().Msgf("[Error] CreateBooksBatch(), db.Begin err: %v", err)
+			return ErrFailedCreateBook
+		}
 		return ErrFailedCreateBook
 	}
 
@@ -266,7 +278,7 @@ func (l *LibraryService) GetBookByISBN(ISBN string) (*model.Book, error) {
 		log.Error().Msgf("[Error] GetAllBooks(), getAverageRating err: %v", err)
 		return nil, err
 	}
-	book.Rating = float64(*ratings.Rating)
+	book.Rating = *ratings.Rating
 
 	return &book, nil
 }
@@ -355,7 +367,7 @@ func (l *LibraryService) GetBookWithBookID(bookID string) (*model.Book, error) {
 		log.Error().Msgf("[Error] GetAllBooks(), getAverageRating err: %v", err)
 		return nil, err
 	}
-	book.Rating = float64(*ratings.Rating)
+	book.Rating = *ratings.Rating
 
 	return &book, nil
 }
@@ -486,7 +498,7 @@ func (l *LibraryService) GetAllBooks(request *model.GetAllBooksRequest) ([]model
 			log.Error().Msgf("[Error] GetAllBooks(), getAverageRating err: %v", err)
 			return nil, 0, err
 		}
-		book.Rating = float64(*ratings.Rating)
+		book.Rating = *ratings.Rating
 
 		books = append(books, book)
 	}
@@ -653,7 +665,7 @@ func (l *LibraryService) GetAllBooksForSearch(request *model.SearchRequest) ([]m
 			log.Error().Msgf("[Error] GetAllBooksForSearch(), getAverageRating err: %v", err)
 			return nil, 0, err
 		}
-		book.Rating = float64(*ratings.Rating)
+		book.Rating = *ratings.Rating
 
 		books = append(books, book)
 	}
@@ -770,7 +782,7 @@ func (l *LibraryService) GetAllBooksFromSpecific(request []string) ([]model.Book
 			log.Error().Msgf("[Error] GetAllBooksFromSpecific(), getAverageRating err: %v", err)
 			return nil, err
 		}
-		book.Rating = float64(*ratings.Rating)
+		book.Rating = *ratings.Rating
 
 		books = append(books, book)
 	}
@@ -905,7 +917,7 @@ func (l *LibraryService) GetAllBooksByBookDetailsFrom(request *model.GetAllBooks
 			log.Error().Msgf("[Error] GetAllBooks(), getAverageRating err: %v", err)
 			return nil, err
 		}
-		book.Rating = float64(*ratings.Rating)
+		book.Rating = *ratings.Rating
 
 		books = append(books, book)
 	}
