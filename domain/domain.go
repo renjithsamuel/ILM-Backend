@@ -40,6 +40,12 @@ type Service interface {
 	UpdateReview(updateReq *model.UpdateReviewRequest) error
 	DeleteReview(reviewID string) error
 	GetReviewsByBookID(bookID string, sortPagination *model.ReviewSort) ([]model.Review, uint, error)
+	// dashboard  related
+	GetDashboardLineGraphData() ([]model.DashboardLineGraphData, error)
+	GetDashboardDataBoard() (*model.DashboardDataBoard, error)
+	GetHighDemandBooks() (*model.HighDemandBooks, error)
+	// dataanalysis related
+	GetBooksByApproximateDemand(request *model.GetBooksByApproximateDemandRequest) ([]model.Book, uint, error)
 }
 
 // LibraryService is a concrete service which implements Service

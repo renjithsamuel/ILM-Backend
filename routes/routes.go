@@ -233,6 +233,60 @@ func NewRoutes(libraryHandler *handlers.LibraryHandler) Routes {
 			ProtectedRoute: true,
 			HandlerFunc:    libraryHandler.SearchHandler,
 		},
+		// dashboard related
+		Route{
+			Name:           "Dashboard line graph data",
+			Method:         http.MethodGet,
+			Pattern:        "/dashboards/linegraph",
+			ProtectedRoute: true,
+			HandlerFunc:    libraryHandler.GetDashboardLineGraphDataHandler,
+		},
+		Route{
+			Name:           "Dashboard data board",
+			Method:         http.MethodGet,
+			Pattern:        "/dashboards/databoard",
+			ProtectedRoute: true,
+			HandlerFunc:    libraryHandler.GetDashboardDataBoardHandler,
+		},
+		Route{
+			Name:           "High demand books",
+			Method:         http.MethodGet,
+			Pattern:        "/dashboards/highdemand",
+			ProtectedRoute: true,
+			HandlerFunc:    libraryHandler.GetHighDemandBooksHandler,
+		},
+		// similar books
+		Route{
+			Name:           "Similar books",
+			Method:         http.MethodGet,
+			Pattern:        "/similarbooks/:isbn",
+			ProtectedRoute: true,
+			HandlerFunc:    libraryHandler.SimilarBooksHandler,
+		},
+		// todo books added in dashboard should be on date on which its added to library
+		// dataanalysis - related
+		Route{
+			Name:           "Get Approximate Demand Books",
+			Method:         http.MethodGet,
+			Pattern:        "/dataanalysis/approximatedemand",
+			ProtectedRoute: true,
+			HandlerFunc:    libraryHandler.GetApproximateDemandHandler,
+		},
+		Route{
+			Name:           "Get Recommended Books For User",
+			Method:         http.MethodGet,
+			Pattern:        "/dataanalysis/recommendedbooks",
+			ProtectedRoute: true,
+			HandlerFunc:    libraryHandler.GetRecommendedBooksForUserHandler,
+		},
+		// token expiration handler
+		Route{
+			Name:           "To check token expiry",
+			Method:         http.MethodGet,
+			Pattern:        "/tokenexpiry",
+			ProtectedRoute: true,
+			HandlerFunc:    libraryHandler.EmptyHandler,
+		},
 	}
 }
 

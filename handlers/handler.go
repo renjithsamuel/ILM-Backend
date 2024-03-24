@@ -49,6 +49,16 @@ type Handler interface {
 	DeleteReviewHandler(c *gin.Context)
 	// search related
 	SearchHandler(c *gin.Context)
+	// dashboard related
+	GetDashboardLineGraphDataHandler(c *gin.Context)
+	GetDashboardDataBoardHandler(c *gin.Context)
+	GetHighDemandBooksHandler(c *gin.Context)
+	// similar books
+	SimilarBooksHandler(c *gin.Context)
+	// data analysis related
+	GetApproximateDemandHandler(c *gin.Context)
+	// empty related
+	EmptyHandler(c *gin.Context)
 }
 
 type LibraryHandler struct {

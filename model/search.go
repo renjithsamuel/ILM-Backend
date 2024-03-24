@@ -8,7 +8,7 @@ type SearchRequest struct {
 	OrderBy    string            `json:"orderBy" form:"orderBy" binding:"required"`
 	SearchBy   string            `json:"searchBy" form:"searchBy" binding:"required"`
 	Type       SearchRequestType `json:"type" form:"type" binding:"required,oneof=user book checkout review"`
-	SearchText string           `json:"searchText" form:"searchText" binding:"omitempty"`
+	SearchText string            `json:"searchText" form:"searchText" binding:"omitempty"`
 }
 
 // SearchRequestType
