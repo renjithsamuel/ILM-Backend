@@ -17,7 +17,6 @@ import (
 	"integrated-library-service/routes"
 
 	"github.com/gin-gonic/gin"
-	"github.com/joho/godotenv"
 
 	_ "github.com/lib/pq" // pq driver.
 )
@@ -49,9 +48,9 @@ var (
 func init() {
 	// Getting secret key
 	// todo remember to remove this before merge
-	if err := godotenv.Load(); err != nil {
-		panic(err)
-	}
+	// if err := godotenv.Load(); err != nil {
+	// 	panic(err)
+	// }
 	secretKey = os.Getenv("JWT_SECRET_KEY")
 	googleAPIKey = os.Getenv("GOOGLE_BOOKS_API_KEY")
 	googleAPIBaseUrl = os.Getenv("GOOGLE_BOOKS_BASE_URL")
