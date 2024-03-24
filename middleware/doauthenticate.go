@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v4"
@@ -14,6 +15,10 @@ import (
 const (
 	userIDContextKey = "userID"
 	bearerPrefix     = "Bearer "
+)
+
+var (
+	ErrTokenExpired = errors.New("token has expired")
 )
 
 func (m *UserMiddleware) DoAuthenticate(c *gin.Context) {
@@ -42,6 +47,13 @@ func (m *UserMiddleware) DoAuthenticate(c *gin.Context) {
 	// Validate token using validateToken
 	userID, err := m.validateToken(token)
 	if err != nil {
+		if errors.Is(err , ErrTokenExpired) {
+			c.JSON(http.StatusUnauthorized, gin.H{
+				"message": "Unauthorized: " + err.Error(),
+			})
+			c.Abort()
+			return
+		}
 		log.Printf("[Validation Failed] %v\n", err)
 		c.JSON(http.StatusUnauthorized, gin.H{
 			"message": "Unauthorized: " + err.Error(),
@@ -78,6 +90,13 @@ func (m *UserMiddleware) validateToken(tokenString string) (string, error) {
 	}
 
 	if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
+		// Check expiration time
+		expirationTime := time.Unix(int64(claims["exp"].(float64)), 0)
+		if time.Now().After(expirationTime) {
+			log.Println("[error] validateToken(): Token has expired")
+			return "", ErrTokenExpired
+		}
+
 		userID, ok := claims["sub"].(string)
 		if !ok {
 			log.Print("[error] validateToken(): sub claim is not a string\n")

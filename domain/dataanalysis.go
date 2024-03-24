@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"integrated-library-service/model"
 
+	"github.com/lib/pq"
 	"github.com/rs/zerolog/log"
 )
 
@@ -18,12 +19,28 @@ var (
 func (l *LibraryService) GetBooksByApproximateDemand(request *model.GetBooksByApproximateDemandRequest) ([]model.Book, uint, error) {
 	sqlStatement := `
         SELECT 
-            "ID",
-            "ISBN",
-            "rating",
-            "views",
-            "wishlistCount",
-            "reviewCount"
+			"ID",
+			"ISBN",
+			"title",
+			"author",
+			"genre",
+			"publishedDate",
+			"desc",
+			"previewLink",
+			"coverImage",
+			"shelfNumber",
+			"inLibrary",
+			"views",
+			"booksLeft",
+			"wishlistCount",
+			"rating",
+			"reviewCount",
+			"approximateDemand",
+			"createdAt",
+			"updatedAt",
+			"reviewsList",
+			"viewsList",
+			"wishList"
         FROM 
             "books"
         WHERE
@@ -49,20 +66,44 @@ func (l *LibraryService) GetBooksByApproximateDemand(request *model.GetBooksByAp
 	var books []model.Book
 	for rows.Next() {
 		var (
-			book model.Book
+			book       model.Book
+			updatedAt  sql.NullTime
+			reviewList pq.StringArray
+			viewList   pq.StringArray
+			wishList   pq.StringArray
 		)
 		err := rows.Scan(
 			&book.ID,
 			&book.ISBN,
-			&book.Rating,
+			&book.Title,
+			&book.Author,
+			&book.Genre,
+			&book.PublishedDate,
+			&book.Description,
+			&book.PreviewLink,
+			&book.CoverImage,
+			&book.ShelfNumber,
+			&book.InLibrary,
 			&book.Views,
+			&book.BooksLeft,
 			&book.WishlistCount,
+			&book.Rating,
 			&book.ReviewCount,
+			&book.ApproximateDemand,
+			&book.CreatedAt,
+			&updatedAt,
+			&reviewList,
+			&viewList,
+			&wishList,
 		)
 		if err != nil {
 			log.Error().Msgf("[Error] UpdateApproximateDemand(), rows.Scan err: %v", err)
 			return nil, 0, nil
 		}
+		book.UpdatedAt = &updatedAt.Time
+		book.ReviewsList = reviewList
+		book.ViewsList = viewList
+		book.WishList = wishList
 
 		// get ratings from helper
 		ratings, err := l.getAverageRating(book.ID)
@@ -76,7 +117,7 @@ func (l *LibraryService) GetBooksByApproximateDemand(request *model.GetBooksByAp
 		demandScore := l.calculateDemandScore(book)
 
 		// Use demand score to estimate approximate demand
-		approximateDemand := demandScore / model.WishlistWeight // wishlist has the highest weight
+		approximateDemand := demandScore / model.RatingWeight // RatingWeight has the highest weight
 		book.ApproximateDemand = approximateDemand
 
 		books = append(books, book)

@@ -6,6 +6,7 @@ import (
 	"integrated-library-service/model"
 	"io"
 	"net/http"
+	"net/url"
 
 	"github.com/rs/zerolog/log"
 )
@@ -27,8 +28,11 @@ func (g *GoogleBooksClient) SearchGoogleBooks(request *model.SearchRequest) ([]*
 		searchQuery = fmt.Sprintf("subject:%s", request.SearchText)
 	}
 
+	// Encode the search query to replace spaces with %20
+	encodedSearchQuery := url.QueryEscape(searchQuery)
+
 	// Construct the URL
-	url := fmt.Sprintf("/v1/volumes?q=%s&orderBy=%v&startIndex=%v&maxResults=%v&key=%v", searchQuery, "relevance", startIndex, request.Limit, g.apiKey)
+	url := fmt.Sprintf("/v1/volumes?q=%s&orderBy=%v&startIndex=%v&maxResults=%v&key=%v", encodedSearchQuery, "relevance", startIndex, request.Limit, g.apiKey)
 
 	req, err := http.NewRequest(http.MethodGet, url, nil)
 	if err != nil {

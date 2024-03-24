@@ -40,9 +40,9 @@ func (th *LibraryHandler) SimilarBooksHandler(c *gin.Context) {
 		Limit:      3,
 		SortBy:     "title",
 		OrderBy:    "ascending",
-		SearchBy:   "title",
+		SearchBy:   "recommendation",
 		Type:       "book",
-		SearchText: book.Genre,
+		SearchText: book.Genre + book.Author + book.Description,
 	}
 
 	// get similar books form google

@@ -14,8 +14,8 @@ type GetRecommendedBooksForUserRequest struct {
 
 // Define point weights for different factors
 const (
-	RatingWeight   = 2
+	RatingWeight   = 5
 	ReviewWeight   = 1
 	ViewWeight     = 1
-	WishlistWeight = 3
+	WishlistWeight = 1
 )

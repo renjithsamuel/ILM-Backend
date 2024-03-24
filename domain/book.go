@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"integrated-library-service/model"
+	"strings"
 	"time"
 
 	"github.com/lib/pq"
@@ -30,6 +31,17 @@ var (
 
 // CreateBook creates a new book or updates an existing one based on ISBN
 func (l *LibraryService) CreateBook(book *model.CreateBookRequest) error {
+	title := book.Title
+	author := book.Author
+
+	if len(title) > 100 {
+		title = title[:100]
+	}
+
+	if len(author) > 50 {
+		author = author[:50]
+	}
+
 	sqlStatement := `
 		INSERT INTO "books"(
 			"ISBN",
@@ -61,8 +73,8 @@ func (l *LibraryService) CreateBook(book *model.CreateBookRequest) error {
 	_, err := l.db.Exec(
 		sqlStatement,
 		book.ISBN,
-		book.Title,
-		book.Author,
+		title,
+		author,
 		book.Genre,
 		book.PublishedDate,
 		book.Description,
@@ -149,10 +161,21 @@ func (l *LibraryService) CreateBooksBatch(books []*model.CreateBookRequest) erro
 	defer stmt.Close()
 
 	for _, book := range books {
+		title := book.Title
+		author := book.Author
+
+		if len(title) > 100 {
+			title = title[:100]
+		}
+
+		if len(author) > 50 {
+			author = author[:50]
+		}
+
 		_, err := stmt.Exec(
 			book.ISBN,
-			book.Title,
-			book.Author,
+			title,
+			author,
 			book.Genre,
 			book.PublishedDate,
 			book.Description,
@@ -595,22 +618,35 @@ func (l *LibraryService) GetAllBooksForSearch(request *model.SearchRequest) ([]m
 	searchBy := `%s`
 	switch request.SearchBy {
 	case "title":
-		searchBy = fmt.Sprintf(searchBy, `(LOWER(title) LIKE LOWER($1))`)
+		searchBy = fmt.Sprintf(searchBy, `(LOWER("title") LIKE LOWER($1))`)
 	case "author":
-		searchBy = fmt.Sprintf(searchBy, `(LOWER(author) LIKE LOWER($1))`)
+		searchBy = fmt.Sprintf(searchBy, `(LOWER("author") LIKE LOWER($1))`)
 	case "isbn":
-		searchBy = fmt.Sprintf(searchBy, `(LOWER(isbn) LIKE LOWER($1))`)
+		searchBy = fmt.Sprintf(searchBy, `(LOWER("ISBN") LIKE LOWER($1))`)
 	case "genre", "subject":
-		searchBy = fmt.Sprintf(searchBy, `(LOWER(genre) LIKE LOWER($1))`)
+		searchBy = fmt.Sprintf(searchBy, `(LOWER("genre") LIKE LOWER($1))`)
+	case "recommendation": // even if any one word from the search text matches we can return that book
+		words := strings.Fields(request.SearchText)
+		var conditions []string
+		for _, word := range words {
+			conditions = append(conditions, fmt.Sprintf(`(LOWER("title") LIKE LOWER('%%%s%%') OR LOWER("author") LIKE LOWER('%%%s%%') OR LOWER("genre") LIKE LOWER('%%%s%%') OR LOWER("ISBN") LIKE LOWER('%%%s%%'))`, word, word, word, word))
+		}
+		searchBy = strings.Join(conditions, " OR ")
 	default:
-		searchBy = fmt.Sprintf(searchBy, `(LOWER(title) LIKE LOWER($1) OR LOWER(author) LIKE LOWER($1) OR LOWER(genre) LIKE LOWER($1) OR LOWER(ISBN) LIKE LOWER($1))`)
+		searchBy = fmt.Sprintf(searchBy, `(LOWER("title") LIKE LOWER($1) OR LOWER("author") LIKE LOWER($1) OR LOWER("genre") LIKE LOWER($1) OR LOWER("ISBN") LIKE LOWER($1))`)
 	}
 
 	limitOffset := ` LIMIT %d OFFSET %d`
 	limitOffset = fmt.Sprintf(limitOffset, request.Limit, (request.Page-1)*(request.Limit))
 	sqlStatement = fmt.Sprintf(sqlStatement, searchBy, orderBy, limitOffset)
 
-	rows, err := l.db.Query(sqlStatement, searchText)
+	var rows *sql.Rows
+	var err error
+	if request.SearchBy == "recommendation" {
+		rows, err = l.db.Query(sqlStatement)
+	} else {
+		rows, err = l.db.Query(sqlStatement, searchText)
+	}
 	if err != nil {
 		log.Error().Msgf("[Error] GetAllBooks(), db.Query err: %v", err)
 		return nil, 0, err
@@ -680,7 +716,11 @@ func (l *LibraryService) GetAllBooksForSearch(request *model.SearchRequest) ([]m
 	`
 
 	var totalRows uint
-	err = l.db.QueryRow(fmt.Sprintf(sqlStatementCount, searchBy), searchText).Scan(&totalRows)
+	if request.SearchBy == "recommendation" {
+		err = l.db.QueryRow(fmt.Sprintf(sqlStatementCount, searchBy)).Scan(&totalRows)
+	} else {
+		err = l.db.QueryRow(fmt.Sprintf(sqlStatementCount, searchBy), searchText).Scan(&totalRows)
+	}
 	// no rows
 	if errors.Is(err, sql.ErrNoRows) {
 		return []model.Book{}, 0, nil

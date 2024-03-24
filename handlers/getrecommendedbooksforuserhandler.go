@@ -2,7 +2,9 @@ package handlers
 
 import (
 	"errors"
+	"math/rand"
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
 
@@ -71,7 +73,7 @@ func (th *LibraryHandler) GetRecommendedBooksForUserHandler(c *gin.Context) {
 		Limit:      req.Limit,
 		SortBy:     "title",
 		OrderBy:    "ascending",
-		SearchBy:   "default",
+		SearchBy:   "recommendation",
 		Type:       "book",
 		SearchText: searchText,
 	}
@@ -133,12 +135,38 @@ func (th *LibraryHandler) getBookListFromUserBookDetails(bookDetails model.BookD
 	return bookList
 }
 
-// generateSearchTextFromBooks
+// // generateSearchTextFromBooks
+// func (th *LibraryHandler) generateSearchTextFromBooks(books []model.Book) string {
+// 	var searchText string
+
+// 	for _, book := range books {
+// 		searchText += book.Genre + book.Author
+// 	}
+
+// 	return searchText
+// }
+
+// generateSearchTextFromBooks selects 4 random books from the provided slice and generates the search text.
 func (th *LibraryHandler) generateSearchTextFromBooks(books []model.Book) string {
+	rand.Seed(time.Now().UnixNano())
+
+	// Shuffle the books to ensure randomness
+	rand.Shuffle(len(books), func(i, j int) {
+		books[i], books[j] = books[j], books[i]
+	})
+
 	var searchText string
 
-	for _, book := range books {
-		searchText += book.Genre + book.Title + book.Author
+	// Select up to 4 random books or all books if there are fewer than 4
+	numBooks := len(books)
+	maxBooks := 3
+	if numBooks < maxBooks {
+		maxBooks = numBooks
+	}
+
+	// Concatenate the genre and author of each selected book
+	for _, book := range books[:maxBooks] {
+		searchText += book.Genre + " " + book.Author + " "
 	}
 
 	return searchText
