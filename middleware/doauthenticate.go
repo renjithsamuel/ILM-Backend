@@ -18,6 +18,7 @@ const (
 )
 
 var (
+	// ErrTokenExpired is when the token is expired
 	ErrTokenExpired = errors.New("token has expired")
 )
 
@@ -47,9 +48,9 @@ func (m *UserMiddleware) DoAuthenticate(c *gin.Context) {
 	// Validate token using validateToken
 	userID, err := m.validateToken(token)
 	if err != nil {
-		if errors.Is(err , ErrTokenExpired) {
+		if errors.Is(err, ErrTokenExpired) {
 			c.JSON(http.StatusUnauthorized, gin.H{
-				"message": "Unauthorized: " + err.Error(),
+				"message": err.Error(),
 			})
 			c.Abort()
 			return

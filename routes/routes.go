@@ -279,6 +279,14 @@ func NewRoutes(libraryHandler *handlers.LibraryHandler) Routes {
 			ProtectedRoute: true,
 			HandlerFunc:    libraryHandler.GetRecommendedBooksForUserHandler,
 		},
+		// token expiration handler
+		Route{
+			Name:           "To check token expiry",
+			Method:         http.MethodGet,
+			Pattern:        "/tokenexpiry",
+			ProtectedRoute: true,
+			HandlerFunc:    libraryHandler.EmptyHandler,
+		},
 	}
 }
 
