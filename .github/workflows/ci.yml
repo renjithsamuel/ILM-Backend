@@ -1,0 +1,44 @@
+name: ILM-Backend
+
+on:
+  push:
+    branches:
+      - '*'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v2
+
+      - name: Set up Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: 1.21
+
+      - name: Install golangci-lint
+        run: curl -sfL https://install.goreleaser.com/github.com/golangci/golangci-lint.sh | sh -s v1.42.1
+
+      - name: Install Dependencies and Build
+        run: go build
+
+      - name: Lint with golangci-lint
+        run: golangci-lint -c .golangci.yml run .
+
+      - name: Run semgrep
+        run: semgrep --config=p/p
+
+  semgrep:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v2
+
+      - name: Set up semgrep
+        run: bash -c "curl -sSL https://semgrep.dev/install.sh | sh"
+
+      - name: Run semgrep
+        run: semgrep --config=p/p
